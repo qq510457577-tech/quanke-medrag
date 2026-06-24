@@ -1,0 +1,38 @@
+# 全科医生辅助诊断系统 - Docker Compose配置
+
+version: '3.8'
+
+services:
+  # 后端API服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: medrag-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-your-deepseek-api-key-here}
+    restart: unless-stopped
+    volumes:
+      - ./medrag_backend:/app
+    networks:
+      - medrag-network
+
+  # 前端Nginx服务
+  frontend:
+    image: nginx:alpine
+    container_name: medrag-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./medrag_frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - medrag-network
+
+networks:
+  medrag-network:
+    driver: bridge

@@ -1,0 +1,15 @@
+{
+  "patient": {
+    "age": 78,
+    "gender": "male",
+    "history": "高血压8年"
+  },
+  "symptoms": [
+    {
+      "description": "头晕3个月",
+      "duration_years": 0,
+      "duration_months": 3,
+      "severity": 2
+    }
+  ]
+}

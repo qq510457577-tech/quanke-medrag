@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全科医生辅助诊断系统 - LLM临床思维链版</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a5276 0%, #2874a6 50%, #1a5276 100%); min-height: 100vh; color: #333; }
+    .app-container { min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header { background: rgba(255,255,255,0.95); padding: 16px 20px; box-shadow: 0 2px 20px rgba(0,0,0,0.15); }
+    .header-content { max-width: 900px; margin: 0 auto; }
+    .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 6px; }
+    .logo-icon { width: 36px; height: 36px; color: #1a5276; }
+    .logo-text { font-size: 22px; font-weight: 700; color: #1a5276; }
+    .header-subtitle { text-align: center; font-size: 13px; color: #666; }
+    .main-content { flex: 1; max-width: 900px; width: 100%; margin: 0 auto; padding: 24px 16px; }
+    
+    /* 步骤指示器 */
+    .steps-container { margin-bottom: 20px; }
+    .steps-track { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 16px; }
+    .step-item { display: flex; align-items: center; }
+    .step-node { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; border: 2px solid rgba(255,255,255,0.4); transition: all 0.3s; }
+    .step-item.active .step-node { background: #fff; color: #1a5276; border-color: #fff; transform: scale(1.15); }
+    .step-item.completed .step-node { background: #27ae60; border-color: #27ae60; }
+    .step-connector { width: 50px; height: 2px; background: rgba(255,255,255,0.3); transition: background 0.3s; }
+    .step-connector.active { background: #27ae60; }
+    .step-labels { display: flex; justify-content: center; gap: 30px; }
+    .step-label { font-size: 12px; color: rgba(255,255,255,0.7); }
+    .step-item.active .step-label { color: #fff; font-weight: 500; }
+    
+    /* 轮次进度条 */
+    .round-progress { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
+    .round-bar { flex: 1; max-width: 300px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+    .round-fill { height: 100%; background: linear-gradient(90deg, #f39c12, #e74c3c); border-radius: 3px; transition: width 0.5s; }
+    .round-text { color: #fff; font-size: 13px; font-weight: 500; }
+    
+    /* API状态 */
+    .api-status { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 16px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; font-size: 12px; color: rgba(255,255,255,0.9); }
+    .api-dot { width: 8px; height: 8px; border-radius: 50%; background: #27ae60; }
+    .api-dot.error { background: #e74c3c; }
+    .api-dot.loading { background: #f39c12; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 16px; }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; text-align: center; color: #1a5276; }
+    
+    /* 表单样式 */
+    .form-section { margin-bottom: 20px; }
+    .section-title { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .section-icon { color: #1a5276; }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 120px; margin-bottom: 12px; }
+    .form-label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+    .form-label.required::after { content: ' *'; color: #e74c3c; }
+    .form-input, .form-select { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; }
+    .form-input:focus, .form-select:focus { outline: none; border-color: #1a5276; }
+    .form-input.error, .form-select.error { border-color: #e74c3c; }
+    .error-text { color: #e74c3c; font-size: 11px; margin-top: 2px; }
+    
+    /* 症状列表 */
+    .symptom-list { display: flex; flex-direction: column; gap: 12px; }
+    .symptom-item { background: #f8f9fa; border-radius: 10px; padding: 14px; position: relative; }
+    .symptom-textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical; min-height: 60px; }
+    .symptom-textarea:focus { outline: none; border-color: #1a5276; }
+    .symptom-textarea.error { border-color: #e74c3c; }
+    .symptom-meta { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+    .meta-group { flex: 1; min-width: 140px; }
+    .meta-label { font-size: 11px; color: #666; margin-bottom: 4px; display: block; }
+    
+    /* 持续时间选择器 */
+    .duration-picker { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .duration-picker select { padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; min-width: 60px; }
+    .duration-picker select:focus { outline: none; border-color: #1a5276; }
+    .duration-unit { font-size: 11px; color: #888; }
+    
+    /* 严重程度选择器 */
+    .severity-picker { display: flex; gap: 8px; }
+    .severity-btn { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #ddd; background: #fff; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+    .severity-btn:hover { transform: scale(1.1); }
+    .severity-btn.active { border-color: #fff; color: #fff; transform: scale(1.15); }
+    .severity-btn[data-level="1"] { background: #d5f5e3; border-color: #d5f5e3; }
+    .severity-btn[data-level="1"].active { background: #27ae60; }
+    .severity-btn[data-level="2"] { background: #abebc6; border-color: #abebc6; }
+    .severity-btn[data-level="2"].active { background: #2ecc71; }
+    .severity-btn[data-level="3"] { background: #f9e79f; border-color: #f9e79f; }
+    .severity-btn[data-level="3"].active { background: #f1c40f; }
+    .severity-btn[data-level="4"] { background: #f5b041; border-color: #f5b041; }
+    .severity-btn[data-level="4"].active { background: #e67e22; }
+    .severity-btn[data-level="5"] { background: #ec7063; border-color: #ec7063; }
+    .severity-btn[data-level="5"].active { background: #e74c3c; }
+    
+    .btn-remove { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; font-size: 18px; }
+    .btn-remove:hover { color: #e74c3c; }
+    .btn-add { display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; color: #666; cursor: pointer; font-size: 13px; }
+    .btn-add:hover { background: #e8e8e8; }
+    .quick-symptoms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .quick-btn { padding: 6px 12px; background: #e8f4f8; border: 1px solid #b8d4e3; border-radius: 15px; color: #1a5276; font-size: 12px; cursor: pointer; }
+    .quick-btn:hover { background: #1a5276; color: #fff; }
+    
+    /* 主按钮 */
+    .btn-primary { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: linear-gradient(135deg, #1a5276, #2874a6); border: none; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,82,118,0.4); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary { flex: 1; padding: 12px; background: #f5f5f5; border: none; border-radius: 8px; color: #666; font-size: 14px; cursor: pointer; }
+    .button-group { display: flex; gap: 10px; margin-top: 20px; }
+    .loading-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* 诊断假设列表 */
+    .hypothesis-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .hypothesis-card { background: #fff; border-radius: 10px; padding: 12px; border: 2px solid #e0e0e0; transition: all 0.3s; }
+    .hypothesis-card.primary { border-color: #e74c3c; background: #fff5f5; }
+    .hypothesis-card.secondary { border-color: #f39c12; background: #fffbf0; }
+    .hypothesis-card.tertiary { border-color: #3498db; background: #f0f8ff; }
+    .hypothesis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .hypothesis-name { font-weight: 600; color: #333; font-size: 14px; }
+    .hypothesis-conf { font-size: 16px; font-weight: 700; }
+    .hypothesis-conf.high { color: #e74c3c; }
+    .hypothesis-conf.medium { color: #f39c12; }
+    .hypothesis-conf.low { color: #3498db; }
+    .hypothesis-reason { font-size: 12px; color: #666; margin-top: 6px; }
+    .hypothesis-category { font-size: 10px; color: #999; background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+    
+    /* 临床思维链 */
+    .reasoning-box { background: #f8f9fa; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #1a5276; }
+    .reasoning-title { font-size: 14px; font-weight: 600; color: #1a5276; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .reasoning-content { font-size: 13px; color: #555; line-height: 1.6; white-space: pre-wrap; }
+    
+    /* 追问问题 */
+    .questions-list { display: flex; flex-direction: column; gap: 16px; }
+    .question-card { background: #f8f9fa; border-radius: 10px; padding: 16px; border: 1px solid #e0e0e0; }
+    .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .question-text { font-size: 14px; color: #333; font-weight: 500; flex: 1; }
+    .question-target { font-size: 10px; color: #1a5276; background: #e8f4f8; padding: 2px 6px; border-radius: 3px; }
+    .question-prompt { font-size: 11px; color: #888; margin-bottom: 10px; font-style: italic; }
+    
+    /* 回答选项 */
+    .answer-options { display: flex; flex-wrap: wrap; gap: 8px; }
+    .option-btn { padding: 8px 16px; border: 2px solid #ddd; border-radius: 20px; background: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+    .option-btn:hover { border-color: #1a5276; background: #e8f4f8; }
+    .option-btn.selected { border-color: #1a5276; background: #1a5276; color: #fff; }
+    .yesno-btns { display: flex; gap: 12px; }
+    .yesno-btn { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .yesno-btn:hover { border-color: #1a5276; }
+    .yesno-btn.yes.selected { border-color: #27ae60; background: #27ae60; color: #fff; }
+    .yesno-btn.no.selected { border-color: #e74c3c; background: #e74c3c; color: #fff; }
+    
+    /* 最终诊断 */
+    .final-diagnosis { display: flex; flex-direction: column; gap: 16px; }
+    .diagnosis-card { background: #fff; border-radius: 12px; padding: 20px; border: 2px solid #e0e0e0; }
+    .diagnosis-card.main { border-color: #e74c3c; background: linear-gradient(135deg, #fff5f5, #fff); }
+    .diagnosis-card.secondary { border-color: #3498db; background: linear-gradient(135deg, #f0f8ff, #fff); }
+    .diagnosis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .diagnosis-name { font-size: 18px; font-weight: 700; color: #333; }
+    .diagnosis-confidence { font-size: 24px; font-weight: 700; }
+    .diagnosis-confidence.high { color: #e74c3c; }
+    .diagnosis-confidence.medium { color: #f39c12; }
+    .diagnosis-confidence.low { color: #3498db; }
+    .diagnosis-type { font-size: 12px; padding: 4px 10px; border-radius: 15px; background: #1a5276; color: #fff; }
+    .diagnosis-reason { font-size: 13px; color: #555; line-height: 1.6; margin: 12px 0; }
+    .diagnosis-evidence { background: #f8f9fa; border-radius: 8px; padding: 12px; margin: 12px 0; }
+    .evidence-title { font-size: 12px; font-weight: 600; color: #1a5276; margin-bottom: 8px; }
+    .evidence-list { list-style: none; padding: 0; }
+    .evidence-list li { font-size: 12px; color: #666; padding: 4px 0; padding-left: 16px; position: relative; }
+    .evidence-list li::before { content: '•'; position: absolute; left: 0; color: #1a5276; }
+    
+    /* 参考文献 */
+    .references-section { margin-top: 16px; }
+    .ref-item { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid #e0e0e0; }
+    .ref-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .ref-title { font-size: 13px; font-weight: 600; color: #1a5276; }
+    .ref-toggle { font-size: 12px; color: #888; }
+    .ref-content { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #555; line-height: 1.6; }
+    .ref-content.expanded { display: block; }
+    .ref-content .highlight { background: #ffebee; color: #c62828; padding: 2px 4px; border-radius: 2px; font-weight: 500; }
+    
+    /* 建议 */
+    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .suggestion-tag { font-size: 11px; padding: 4px 10px; background: #e8f4f8; color: #1a5276; border-radius: 15px; border: 1px solid #b8d4e3; }
+    
+    /* 进度提示 */
+    .progress-info { text-align: center; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 12px; }
+    .progress-info span { color: #f39c12; font-weight: 600; }
+    
+    /* 动画 */
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+    .slide-enter-active, .slide-leave-active { transition: all 0.3s; }
+    .slide-enter-from, .slide-leave-to { transform: translateY(20px); opacity: 0; }
+    
+    /* 加载进度条 */
+    .loading-progress-bar { margin-bottom: 16px; padding: 12px; background: rgba(26, 82, 118, 0.1); border-radius: 8px; }
+    .progress-text { font-size: 13px; color: #1a5276; margin-bottom: 8px; text-align: center; font-weight: 500; }
+    .progress-track { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #1a5276, #2874a6); border-radius: 3px; transition: width 0.5s ease-out; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="app-container">
+      <!-- 头部 -->
+      <header class="app-header">
+        <div class="header-content">
+          <div class="logo">
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            <span class="logo-text">全科医生辅助诊断系统</span>
+          </div>
+          <div class="header-subtitle">基于DeepSeek LLM 临床思维链 | 智能辅助诊断</div>
+        </div>
+      </header>
+      
+      <main class="main-content">
+        <!-- 步骤指示器 -->
+        <div class="steps-container">
+          <div class="steps-track">
+            <div class="step-item" :class="{ active: currentStep === 1, completed: currentStep > 1 }">
+              <div class="step-node">1</div>
+            </div>
+            <div class="step-connector" :class="{ active: currentStep > 1 }"></div>
+            <div class="step-item" :class="{ active: currentStep === 2, completed: currentStep > 2 }">
+              <div class="step-node">2</div>
+            </div>
+            <div class="step-connector" :class="{ active: currentStep > 2 }"></div>
+            <div class="step-item" :class="{ active: currentStep === 3 }">
+              <div class="step-node">3</div>
+            </div>
+          </div>
+          <div class="step-labels">
+            <span class="step-label" :style="{ fontWeight: currentStep === 1 ? 600 : 400 }">收集症状</span>
+            <span class="step-label" :style="{ fontWeight: currentStep === 2 ? 600 : 400 }">智能追问</span>
+            <span class="step-label" :style="{ fontWeight: currentStep === 3 ? 600 : 400 }">诊断结论</span>
+          </div>
+        </div>
+        
+        <!-- 轮次进度条 -->
+        <div v-if="currentStep === 2" class="round-progress">
+          <span class="round-text">第 {{ currentRound }} / {{ maxRounds }} 轮</span>
+          <div class="round-bar">
+            <div class="round-fill" :style="{ width: (currentRound / maxRounds * 100) + '%' }"></div>
+          </div>
+        </div>
+        
+        <!-- API状态 -->
+        <div class="api-status">
+          <div class="api-dot" :class="apiStatus"></div>
+          <span>{{ apiStatusText }}</span>
+        </div>
+        
+        <!-- 步骤1: 收集症状和基础信息 -->
+        <div v-if="currentStep === 1" class="card">
+          <h2 class="card-title">患者信息与症状</h2>
+          
+          <!-- 基础信息 -->
+          <div class="form-section">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              基础信息
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required">年龄</label>
+                <input type="number" v-model.number="patientInfo.age" class="form-input" :class="{ error: errors.age }" placeholder="请输入年龄" min="0" max="150">
+                <div v-if="errors.age" class="error-text">{{ errors.age }}</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label required">性别</label>
+                <select v-model="patientInfo.gender" class="form-select" :class="{ error: errors.gender }">
+                  <option value="">请选择性别</option>
+                  <option value="male">男</option>
+                  <option value="female">女</option>
+                </select>
+                <div v-if="errors.gender" class="error-text">{{ errors.gender }}</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">既往病史</label>
+                <input type="text" v-model="patientInfo.history" class="form-input" placeholder="如：高血压、糖尿病等">
+              </div>
+              <div class="form-group">
+                <label class="form-label">过敏史</label>
+                <input type="text" v-model="patientInfo.allergies" class="form-input" placeholder="如：青霉素过敏">
+              </div>
+            </div>
+          </div>
+          
+          <!-- 症状信息 -->
+          <div class="form-section">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+              症状描述
+            </div>
+            
+            <div class="symptom-list">
+              <div v-for="(symptom, index) in symptoms" :key="index" class="symptom-item">
+                <button v-if="symptoms.length > 1" @click="removeSymptom(index)" class="btn-remove" title="删除">×</button>
+                
+                <textarea v-model="symptom.description" class="symptom-textarea" :class="{ error: errors['symptom' + index] }" placeholder="请描述症状（如：头晕、头痛、胸闷等）"></textarea>
+                <div v-if="errors['symptom' + index]" class="error-text" style="margin-top: 4px;">{{ errors['symptom' + index] }}</div>
+                
+                <div class="symptom-meta">
+                  <div class="meta-group">
+                    <span class="meta-label">持续时间</span>
+                    <div class="duration-picker">
+                      <select v-model.number="symptom.durationYears">
+                        <option :value="0">0</option>
+                        <option v-for="y in 10" :key="y" :value="y">{{ y - 1 }}</option>
+                      </select>
+                      <span class="duration-unit">年</span>
+                      <select v-model.number="symptom.durationMonths">
+                        <option v-for="m in 12" :key="m-1" :value="m-1">{{ m - 1 }}</option>
+                      </select>
+                      <span class="duration-unit">月</span>
+                      <select v-model.number="symptom.durationDays">
+                        <option v-for="d in 31" :key="d-1" :value="d-1">{{ d - 1 }}</option>
+                      </select>
+                      <span class="duration-unit">日</span>
+                    </div>
+                  </div>
+                  
+                  <div class="meta-group">
+                    <span class="meta-label">严重程度（点击选择）</span>
+                    <div class="severity-picker">
+                      <button v-for="level in 5" :key="level" class="severity-btn" :class="{ active: symptom.severity === level }" :data-level="level" @click="symptom.severity = level" :title="'严重程度' + level + '级'">
+                        {{ level }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <button @click="addSymptom" class="btn-add" style="margin-top: 12px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              添加更多症状
+            </button>
+            
+            <div class="quick-symptoms">
+              <span style="font-size: 11px; color: #888;">快速添加：</span>
+              <button v-for="s in commonSymptoms" :key="s" @click="addQuickSymptom(s)" class="quick-btn">{{ s }}</button>
+            </div>
+          </div>
+          
+          <button @click="submitSymptoms" class="btn-primary" :disabled="isLoading || !canSubmit">
+            <span v-if="isLoading" class="loading-spinner"></span>
+            <span>{{ isLoading ? 'AI分析中...' : '开始智能诊断' }}</span>
+          </button>
+        </div>
+        
+        <!-- 步骤2: 追问和诊断 -->
+        <div v-if="currentStep === 2" class="card">
+          <h2 class="card-title">AI智能追问</h2>
+          
+          <!-- 进度信息 -->
+          <div class="progress-info">
+            已完成 <span>{{ answeredCount }}</span> / {{ currentQuestions.length }} 个问题
+          </div>
+          
+          <!-- 临床思维链 -->
+          <div v-if="reasoningChain" class="reasoning-box">
+            <div class="reasoning-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+              临床思维链分析
+            </div>
+            <div class="reasoning-content">{{ reasoningChain }}</div>
+          </div>
+          
+          <!-- 当前诊断假设 -->
+          <div v-if="diagnosisHypothesis.length > 0" class="form-section">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12l2 2 4-4"/>
+                <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              当前诊断假设
+            </div>
+            <div class="hypothesis-list">
+              <div v-for="(hyp, idx) in diagnosisHypothesis" :key="idx" class="hypothesis-card" :class="getHypothesisClass(hyp.confidence)">
+                <div class="hypothesis-header">
+                  <span class="hypothesis-name">{{ hyp.disease }}</span>
+                  <span class="hypothesis-conf" :class="getConfClass(hyp.confidence)">{{ hyp.confidence }}%</span>
+                </div>
+                <div class="hypothesis-reason">{{ hyp.reasoning }}</div>
+                <span class="hypothesis-category">{{ hyp.category }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 追问问题 -->
+          <div v-if="currentQuestions.length > 0" class="form-section">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              请回答以下问题以帮助明确诊断
+            </div>
+            
+            <div class="questions-list">
+              <div v-for="(q, qIdx) in currentQuestions" :key="q.question_id" class="question-card">
+                <div class="question-header">
+                  <span class="question-text">{{ q.question }}</span>
+                  <div>
+                    <span v-if="q.target_symptom" class="question-symptom" style="font-size: 10px; color: #e74c3c; background: #fff5f5; padding: 2px 6px; border-radius: 3px; margin-right: 6px;">{{ q.target_symptom }}</span>
+                    <span class="question-target">{{ q.target_disease }}</span>
+                  </div>
+                </div>
+                <div v-if="q.purpose" class="question-prompt">{{ q.purpose }}</div>
+                
+                <!-- 选择题选项 -->
+                <div v-if="q.input_type === 'yesno'" class="yesno-btns">
+                  <button class="yesno-btn yes" :class="{ selected: q.answer === true || q.answer === '是' }" @click="selectYesNo(q, '是')">是</button>
+                  <button class="yesno-btn no" :class="{ selected: q.answer === false || q.answer === '否' }" @click="selectYesNo(q, '否')">否</button>
+                </div>
+                
+                <div v-else-if="q.input_type === 'single'" class="answer-options">
+                  <button v-for="opt in q.options" :key="opt" class="option-btn" :class="{ selected: q.answer === opt }" @click="selectSingle(q, opt)">{{ opt }}</button>
+                </div>
+                
+                <div v-else-if="q.input_type === 'multiple'" class="answer-options">
+                  <button v-for="opt in q.options" :key="opt" class="option-btn" :class="{ selected: q.answers && q.answers.includes(opt) }" @click="toggleMulti(q, opt)">{{ opt }}</button>
+                </div>
+                
+                <div v-else-if="q.input_type === 'severity'" class="severity-picker" style="margin-top: 8px;">
+                  <button v-for="level in 5" :key="level" class="severity-btn" :class="{ active: q.answer === level }" :data-level="level" @click="selectSeverity(q, level)">{{ level }}</button>
+                </div>
+                
+                <div v-else>
+                  <input type="text" v-model="q.answer" class="form-input" placeholder="请输入答案" style="margin-top: 8px;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="button-group">
+            <!-- 加载进度条 -->
+            <div v-if="isLoading" class="loading-progress-bar">
+              <div class="progress-text">{{ getLoadingMessage() }}</div>
+              <div class="progress-track">
+                <div class="progress-fill" :style="{width: loadingProgress + '%'}"></div>
+              </div>
+            </div>
+            
+            <button @click="nextRound" class="btn-primary" :disabled="isLoading || answeredCount === 0">
+              <span v-if="isLoading" class="loading-spinner"></span>
+              <span>{{ isLoading ? 'AI分析中，请稍候...' : (isDiagnosisClear ? '查看最终诊断' : '下一轮追问') }}</span>
+            </button>
+            <button @click="startNewDiagnosis" class="btn-secondary">重新开始</button>
+          </div>
+        </div>
+        
+        <!-- 步骤3: 最终诊断 -->
+        <div v-if="currentStep === 3" class="card">
+          <h2 class="card-title">辅助诊断结论</h2>
+          
+          <!-- 临床思维链总结 -->
+          <div v-if="clinicalReasoning" class="reasoning-box">
+            <div class="reasoning-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+              临床思维链总结
+            </div>
+            <div class="reasoning-content">{{ clinicalReasoning }}</div>
+          </div>
+          
+          <!-- 诊断结果 -->
+          <div class="final-diagnosis">
+            <div v-for="(diag, idx) in finalDiagnoses" :key="idx" class="diagnosis-card" :class="diag.diagnosis_type === '主要诊断' ? 'main' : 'secondary'">
+              <div class="diagnosis-header">
+                <span class="diagnosis-name">{{ diag.disease }}</span>
+                <span class="diagnosis-confidence" :class="getConfClass(diag.confidence)">{{ diag.confidence }}%</span>
+              </div>
+              <span class="diagnosis-type">{{ diag.diagnosis_type }}</span>
+              
+              <div class="diagnosis-reason">{{ diag.reasoning }}</div>
+              
+              <!-- 诊断依据 -->
+              <div v-if="diag.evidence && diag.evidence.length > 0" class="diagnosis-evidence">
+                <div class="evidence-title">诊断依据</div>
+                <ul class="evidence-list">
+                  <li v-for="(ev, evIdx) in diag.evidence" :key="evIdx">{{ ev }}</li>
+                </ul>
+              </div>
+              
+              <!-- 参考文献 -->
+              <div v-if="diag.references && diag.references.length > 0" class="references-section">
+                <div class="evidence-title">参考文献/指南</div>
+                <div v-for="(ref, refIdx) in diag.references" :key="refIdx" class="ref-item">
+                  <div class="ref-header" @click="toggleRef(idx, refIdx)">
+                    <span class="ref-title">{{ ref.title }}</span>
+                    <span class="ref-toggle">{{ ref.expanded ? '▼ 收起' : '▶ 展开' }}</span>
+                  </div>
+                  <div class="ref-content" :class="{ expanded: ref.expanded }">
+                    <span v-html="highlightText(ref.content)"></span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 建议 -->
+              <div v-if="diag.suggestions && diag.suggestions.length > 0" class="suggestions">
+                <span v-for="(sug, sugIdx) in diag.suggestions" :key="sugIdx" class="suggestion-tag">{{ sug }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="button-group">
+            <button @click="startNewDiagnosis" class="btn-primary">
+              <span>开始新的诊断</span>
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+      setup() {
+        // API配置 - 自动检测环境
+        // 开发环境：使用127.0.0.1:8000（避免DNS解析延迟）
+        // 生产环境：使用相对路径/api（通过nginx反向代理）
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        const API_BASE = isProduction ? '/api' : 'http://127.0.0.1:8000/api';
+        
+        const currentStep = ref(1);
+        const currentRound = ref(1);
+        const maxRounds = ref(4);
+        const isLoading = ref(false);
+        const apiStatus = ref('loading');
+        
+        const patientInfo = ref({ age: null, gender: '', history: '', allergies: '' });
+        const symptoms = ref([{ description: '', durationYears: 0, durationMonths: 0, durationDays: 0, severity: 1 }]);
+        const errors = ref({});
+        
+        const sessionId = ref('');
+        const diagnosisHypothesis = ref([]);
+        const currentQuestions = ref([]);
+        const reasoningChain = ref('');
+        const isDiagnosisClear = ref(false);
+        
+        const finalDiagnoses = ref([]);
+        const clinicalReasoning = ref('');
+        const expandedRefs = ref({});
+        
+        const commonSymptoms = ['头晕', '头痛', '胸痛', '腹痛', '腰痛', '咳嗽', '发热', '乏力', '恶心', '心悸', '气短', '腹泻', '失眠'];
+        
+        const canSubmit = computed(() => {
+          return symptoms.value.some(s => s.description.trim());
+        });
+        
+        const answeredCount = computed(() => currentQuestions.value.filter(q => {
+          if (q.input_type === 'multiple') {
+            return q.answers && q.answers.length > 0;
+          }
+          return q.answer !== null && q.answer !== undefined && q.answer !== '';
+        }).length);
+        
+        const apiStatusText = computed(() => {
+          if (apiStatus.value === 'loading') return '正在连接AI诊断服务...';
+          if (apiStatus.value === 'error') return '⚠️ 后端服务未连接（请确保本地后端正在运行）';
+          return '✓ AI诊断服务已就绪';
+        });
+        
+        // 验证表单
+        function validateForm() {
+          errors.value = {};
+          let isValid = true;
+          
+          if (!patientInfo.value.age || patientInfo.value.age < 0 || patientInfo.value.age > 150) {
+            errors.value.age = '请输入有效的年龄';
+            isValid = false;
+          }
+          
+          if (!patientInfo.value.gender) {
+            errors.value.gender = '请选择性别';
+            isValid = false;
+          }
+          
+          let hasSymptom = false;
+          symptoms.value.forEach((s, idx) => {
+            if (s.description.trim()) {
+              hasSymptom = true;
+            } else {
+              errors.value['symptom' + idx] = '请填写症状描述';
+            }
+          });
+          
+          if (!hasSymptom) {
+            isValid = false;
+          }
+          
+          return isValid;
+        }
+        
+        // 检查API连接（自动检测环境）
+        async function checkApi() {
+          const apiBase = isProduction ? '' : 'http://127.0.0.1:8000';
+          try {
+            const response = await fetch(`${apiBase}/`);
+            if (response.ok) {
+              apiStatus.value = 'ready';
+              console.log('后端服务连接成功');
+            } else {
+              apiStatus.value = 'error';
+              console.log('后端服务响应异常');
+            }
+          } catch (e) {
+            apiStatus.value = 'error';
+            console.error('后端服务连接失败:', e);
+          }
+        }
+        checkApi();
+        
+        function addSymptom() { 
+          symptoms.value.push({ description: '', durationYears: 0, durationMonths: 0, durationDays: 0, severity: 1 }); 
+        }
+        function removeSymptom(i) { 
+          if (symptoms.value.length > 1) {
+            symptoms.value.splice(i, 1); 
+          }
+        }
+        function addQuickSymptom(s) { 
+          symptoms.value.push({ description: s, durationYears: 0, durationMonths: 0, durationDays: 0, severity: 1 }); 
+        }
+        
+        function getHypothesisClass(conf) {
+          if (conf >= 70) return 'primary';
+          if (conf >= 40) return 'secondary';
+          return 'tertiary';
+        }
+        
+        function getConfClass(conf) {
+          if (conf >= 70) return 'high';
+          if (conf >= 40) return 'medium';
+          return 'low';
+        }
+        
+        // 选择函数
+        // 优化加载状态显示
+        function getLoadingMessage() {
+          const messages = [
+            '正在分析症状...',
+            '正在构建诊断假设...',
+            '正在生成追问问题...',
+            'AI深度思考中...',
+            '正在进行循证分析...'
+          ];
+          return messages[Math.floor(Math.random() * messages.length)];
+        }
+        
+        // 添加进度条状态
+        const loadingProgress = ref(0);
+        let progressTimer = null;
+        
+        function startLoadingAnimation() {
+          loadingProgress.value = 0;
+          progressTimer = setInterval(() => {
+            loadingProgress.value = Math.min(loadingProgress.value + 10, 90);
+          }, 1000);
+        }
+        
+        function stopLoadingAnimation() {
+          if (progressTimer) {
+            clearInterval(progressTimer);
+            progressTimer = null;
+          }
+          loadingProgress.value = 100;
+          setTimeout(() => loadingProgress.value = 0, 500);
+        }
+        function selectYesNo(q, val) { q.answer = val; }
+        function selectSeverity(q, val) { q.answer = val; }
+        function selectSingle(q, val) { q.answer = val; }
+        function toggleMulti(q, opt) {
+          if (!q.answers) q.answers = [];
+          const idx = q.answers.indexOf(opt);
+          if (idx > -1) q.answers.splice(idx, 1);
+          else q.answers.push(opt);
+        }
+        
+        // 高亮关键词
+        function highlightText(text) {
+          if (!text) return '';
+          const keywords = ['阳性', '阴性', '支持', '排除', '诊断', '治疗', '建议', '检查', '指标', '异常', '正常'];
+          let result = text;
+          keywords.forEach(kw => {
+            const regex = new RegExp('(' + kw + ')', 'gi');
+            result = result.replace(regex, '<span class="highlight">$1</span>');
+          });
+          return result;
+        }
+        
+        // 展开/收起参考文献
+        function toggleRef(diagIdx, refIdx) {
+          const key = `${diagIdx}-${refIdx}`;
+          expandedRefs.value[key] = !expandedRefs.value[key];
+          
+          // 更新ref的展开状态
+          if (finalDiagnoses.value[diagIdx].references) {
+            finalDiagnoses.value[diagIdx].references[refIdx].expanded = expandedRefs.value[key];
+          }
+        }
+        
+        async function submitSymptoms() {
+          if (!validateForm()) {
+            alert('请完善必要的患者信息和症状描述');
+            return;
+          }
+          
+          isLoading.value = true;
+          apiStatus.value = 'loading';
+          startLoadingAnimation();
+          
+          try {
+            const response = await fetch(`${API_BASE}/diagnosis/start`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                patient: patientInfo.value,
+                // 转换症状数据格式：camelCase -> snake_case
+                symptoms: symptoms.value.map(s => ({
+                  description: s.description,
+                  duration_years: s.durationYears || 0,
+                  duration_months: s.durationMonths || 0,
+                  duration_days: s.durationDays || 0,
+                  severity: s.severity || 1
+                })),
+                session_id: sessionId.value || null
+              })
+            });
+            
+            if (!response.ok) throw new Error('诊断服务请求失败');
+            
+            const data = await response.json();
+            sessionId.value = data.session_id;
+            diagnosisHypothesis.value = data.differential_diagnoses || [];
+            currentQuestions.value = data.current_questions || [];
+            reasoningChain.value = data.reasoning_chain || '';
+            isDiagnosisClear.value = data.is_diagnosis_clear || false;
+            
+            // 初始化问题答案
+            currentQuestions.value.forEach(q => {
+              q.answer = null;
+              q.answers = [];
+              if (q.references) {
+                q.references.forEach(r => r.expanded = false);
+              }
+            });
+            
+            currentRound.value = 1;
+            currentStep.value = 2;
+            apiStatus.value = 'ready';
+          } catch (error) {
+            console.error('诊断失败:', error);
+            alert('诊断服务暂时不可用，请确保后端服务正在运行');
+            apiStatus.value = 'error';
+          } finally {
+            stopLoadingAnimation();
+            isLoading.value = false;
+          }
+        }
+        
+        async function nextRound() {
+          // 收集当前轮答案
+          const answers = currentQuestions.value.map(q => ({
+            question_id: q.question_id,
+            question: q.question,
+            answer: q.input_type === 'multiple' ? q.answers : q.answer,
+            answer_type: q.input_type
+          })).filter(a => a.answer !== null && a.answer !== undefined && (Array.isArray(a.answer) ? a.answer.length > 0 : true));
+          
+          if (answers.length === 0) {
+            alert('请至少回答一个问题');
+            return;
+          }
+          
+          isLoading.value = true;
+          startLoadingAnimation();
+          
+          try {
+            const response = await fetch(`${API_BASE}/diagnosis/follow-up`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: sessionId.value,
+                answers: answers
+              })
+            });
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('追问失败:', response.status, errorText);
+              throw new Error('获取追问结果失败，请检查后端服务是否正常运行');
+            }
+            
+            const data = await response.json();
+            
+            // 更新诊断假设
+            if (data.diagnosis_updates) {
+              data.diagnosis_updates.forEach(update => {
+                const hyp = diagnosisHypothesis.value.find(h => h.disease === update.disease);
+                if (hyp) {
+                  hyp.confidence = update.confidence;
+                  hyp.reasoning = update.confidence_change;
+                  if (update.supporting_evidence) {
+                    hyp.evidence = update.supporting_evidence;
+                  }
+                }
+              });
+              
+              // 按置信度重新排序
+              diagnosisHypothesis.value.sort((a, b) => b.confidence - a.confidence);
+            }
+            
+            // 更新思维链
+            if (data.reasoning_chain) {
+              reasoningChain.value = data.reasoning_chain;
+            }
+            
+            // 更新诊断明确状态
+            isDiagnosisClear.value = data.is_diagnosis_clear || false;
+            
+            // 获取下一轮问题或完成诊断
+            if (!isDiagnosisClear.value && data.next_round_questions && data.next_round_questions.length > 0 && currentRound.value < maxRounds.value) {
+              currentQuestions.value = data.next_round_questions;
+              currentRound.value++;
+              
+              // 初始化新问题答案
+              currentQuestions.value.forEach(q => {
+                q.answer = null;
+                q.answers = [];
+              });
+            } else {
+              // 诊断已明确或达到最大轮次，生成最终诊断
+              await submitDiagnosis();
+              return;
+            }
+            
+          } catch (error) {
+            console.error('获取追问结果失败:', error);
+            alert('获取追问结果失败');
+          } finally {
+            stopLoadingAnimation();
+            isLoading.value = false;
+          }
+        }
+        
+        async function submitDiagnosis() {
+          isLoading.value = true;
+          startLoadingAnimation();
+          
+          try {
+            const answers = currentQuestions.value.map(q => ({
+              question_id: q.question_id,
+              question: q.question,
+              answer: q.input_type === 'multiple' ? q.answers : q.answer,
+              answer_type: q.input_type
+            })).filter(a => a.answer !== null && a.answer !== undefined && (Array.isArray(a.answer) ? a.answer.length > 0 : true));
+            
+            const response = await fetch(`${API_BASE}/diagnosis/final`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: sessionId.value,
+                answers: answers
+              })
+            });
+            
+            if (!response.ok) throw new Error('获取诊断结果失败');
+            
+            const data = await response.json();
+            
+            finalDiagnoses.value = data.diagnoses || [];
+            clinicalReasoning.value = data.clinical_reasoning || '';
+            
+            // 初始化参考文献展开状态
+            finalDiagnoses.value.forEach((diag, i) => {
+              if (diag.references) {
+                diag.references.forEach((ref, j) => {
+                  ref.expanded = false;
+                });
+              }
+            });
+            
+            currentStep.value = 3;
+            
+          } catch (error) {
+            console.error('获取诊断结果失败:', error);
+            alert('获取诊断结果失败');
+          } finally {
+            stopLoadingAnimation();
+            isLoading.value = false;
+          }
+        }
+        
+        function startNewDiagnosis() {
+          resetData();
+          currentStep.value = 1;
+        }
+        
+        function resetData() {
+          currentRound.value = 1;
+          symptoms.value = [{ description: '', durationYears: 0, durationMonths: 0, durationDays: 0, severity: 1 }];
+          patientInfo.value = { age: null, gender: '', history: '', allergies: '' };
+          sessionId.value = '';
+          diagnosisHypothesis.value = [];
+          currentQuestions.value = [];
+          reasoningChain.value = '';
+          isDiagnosisClear.value = false;
+          finalDiagnoses.value = [];
+          clinicalReasoning.value = '';
+          expandedRefs.value = {};
+          errors.value = {};
+        }
+        
+        return {
+          currentStep, currentRound, maxRounds, isLoading,
+          patientInfo, symptoms, commonSymptoms, errors, canSubmit,
+          currentQuestions, answeredCount, isDiagnosisClear,
+          diagnosisHypothesis, finalDiagnoses, clinicalReasoning,
+          reasoningChain, apiStatus, apiStatusText,
+          addSymptom, removeSymptom, addQuickSymptom,
+          selectYesNo, selectSeverity, selectSingle, toggleMulti,
+          submitSymptoms, nextRound, submitDiagnosis,
+          getHypothesisClass, getConfClass, toggleRef, highlightText,
+          startNewDiagnosis, resetData, Math,
+          loadingProgress, getLoadingMessage, startLoadingAnimation, stopLoadingAnimation
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

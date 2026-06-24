@@ -1,0 +1,6 @@
+@echo off
+echo Killing existing Python processes...
+taskkill /F /IM python.exe 2>nul
+echo Starting fresh server...
+cd /d "C:\Users\Administrator\.minimax-agent-cn\projects\1\medrag_backend"
+python -m uvicorn llm_diagnosis:app --host 0.0.0.0 --port 8000
