@@ -1555,7 +1555,8 @@ async def generate_follow_up_questions(
 四、诊断明确条件（智能收敛）
 - 主要诊断置信度≥70%，终止追问
 - 或前两位诊断置信度差距≥30%，终止追问
-- 或已完成4轮追问且诊断逐渐收敛，可终止追问
+- 最多追问6轮；未达到6轮时，只有诊断已经明确或出现红旗征才终止追问
+- 已完成4轮后，如果主要诊断仍不明确，应继续围绕关键鉴别点追问，避免机械结束
 - 优先考虑诊断质量而非轮次数量
 
 五、老年患者特殊考虑
@@ -1992,8 +1993,8 @@ async def follow_up_diagnosis(request: FollowUpRequest):
         if assessment_state and not assessment_state.get('required_facts_complete', True):
             is_clear = False
 
-        # 如果诊断未明确但已达到最大轮次，也结束（智能收敛：4轮）
-        if session.round_count >= 4 and not is_clear and assessment_state.get('required_facts_complete', True):
+        # 最多追问6轮；未达到上限时交由模型和规则判断是否已明确。
+        if session.round_count >= 6 and not is_clear and assessment_state.get('required_facts_complete', True):
             is_clear = True
         
         session.is_diagnosis_clear = is_clear
