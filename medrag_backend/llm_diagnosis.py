@@ -330,6 +330,68 @@ def parse_llm_json_object(text: str) -> Dict[str, Any]:
     raise ValueError("无法解析LLM返回的JSON对象")
 
 
+def _clip_text(value: Any, limit: int = 120) -> str:
+    text = str(value or "").strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip("，。；,; ") + "..."
+
+
+def _clip_list(values: Any, max_items: int = 3, text_limit: int = 80) -> List[Any]:
+    if not isinstance(values, list):
+        return []
+    clipped = []
+    for item in values[:max_items]:
+        if isinstance(item, dict):
+            compact_item = dict(item)
+            for key in ("purpose", "reason", "content", "title"):
+                if key in compact_item:
+                    compact_item[key] = _clip_text(compact_item[key], text_limit)
+            clipped.append(compact_item)
+        else:
+            clipped.append(_clip_text(item, text_limit))
+    return clipped
+
+
+def compact_llm_output(data: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(data, dict):
+        return data
+
+    for key, limit in (
+        ("symptom_analysis", 160),
+        ("reasoning_chain", 140),
+        ("clinical_reasoning", 160),
+        ("diagnosis_summary", 140),
+    ):
+        if key in data:
+            data[key] = _clip_text(data[key], limit)
+
+    for key in ("required_examinations", "optional_examinations"):
+        if key in data:
+            data[key] = _clip_list(data[key], 3, 90)
+
+    for diag in data.get("differential_diagnoses", []) or []:
+        if isinstance(diag, dict):
+            diag["reasoning"] = _clip_text(diag.get("reasoning", ""), 90)
+            diag["related_symptoms"] = _clip_list(diag.get("related_symptoms", []), 3, 40)
+
+    for update in data.get("diagnosis_updates", []) or []:
+        if isinstance(update, dict):
+            update["confidence_change"] = _clip_text(update.get("confidence_change", ""), 90)
+            update["supporting_evidence"] = _clip_list(update.get("supporting_evidence", []), 2, 70)
+            update["ruling_out_evidence"] = _clip_list(update.get("ruling_out_evidence", []), 2, 70)
+
+    for diag in data.get("diagnoses", []) or []:
+        if isinstance(diag, dict):
+            diag["reasoning"] = _clip_text(diag.get("reasoning", ""), 100)
+            diag["evidence"] = _clip_list(diag.get("evidence", []), 3, 70)
+            diag["evidence_source"] = _clip_list(diag.get("evidence_source", []), 2, 80)
+            diag["references"] = _clip_list(diag.get("references", []), 2, 90)
+            diag["suggestions"] = _clip_list(diag.get("suggestions", []), 3, 70)
+
+    return data
+
+
 def _stringify_answer(answer: Any) -> str:
     if isinstance(answer, list):
         return "、".join(str(item) for item in answer)
@@ -1114,6 +1176,17 @@ EVIDENCE_BASED_SYSTEM_PROMPT = """你是一位资深循证全科医学专家，�
 - WHO规范：WHO《XXX management guideline》
 """
 
+CONCISE_OUTPUT_PROMPT = """
+
+【输出风格】
+1. 结论优先，只保留对诊断、分诊、下一步检查有影响的信息。
+2. 不展开长篇思维链；reasoning_chain/clinical_reasoning 只写1-2句临床摘要。
+3. 每个诊断的 reasoning 不超过80字，先写支持点，再写需要排除点。
+4. evidence、suggestions、required_examinations、optional_examinations 每类最多3条。
+5. 追问问题只问最关键的3个；每个问题一句话，选项短、互斥、可直接点击。
+6. 不重复患者已提供的信息，不写泛泛科普，不输出处方剂量。
+"""
+
 # ==================== LLM临床思维链核心功能 ====================
 
 async def generate_initial_diagnosis(request: DiagnosisRequest) -> Dict:
@@ -1343,9 +1416,13 @@ async def generate_initial_diagnosis(request: DiagnosisRequest) -> Dict:
     prompt = patient_info + symptoms_info + prompt
 
     try:
-        result = await call_deepseek(prompt, system_prompt=EVIDENCE_BASED_SYSTEM_PROMPT, max_tokens=3000)
+        result = await call_deepseek(
+            prompt,
+            system_prompt=EVIDENCE_BASED_SYSTEM_PROMPT + CONCISE_OUTPUT_PROMPT,
+            max_tokens=1800,
+        )
         
-        diagnosis_data = parse_llm_json_object(result)
+        diagnosis_data = compact_llm_output(parse_llm_json_object(result))
         # 确保is_emergency字段存在
         if 'is_emergency' not in diagnosis_data:
             diagnosis_data['is_emergency'] = False
@@ -1451,7 +1528,7 @@ async def generate_follow_up_questions(
     patient_info_text = "{}岁{}".format(session.patient_info.age or '未填写', gender_text)
     
     # 追问系统提示词
-    follow_up_system_prompt = EVIDENCE_BASED_SYSTEM_PROMPT + """
+    follow_up_system_prompt = EVIDENCE_BASED_SYSTEM_PROMPT + CONCISE_OUTPUT_PROMPT + """
 
 【临床思维链追问策略 - 必须严格遵循】
 
@@ -1579,14 +1656,14 @@ async def generate_follow_up_questions(
 '''
 
     try:
-        result = await call_deepseek(prompt, system_prompt=follow_up_system_prompt, max_tokens=3000)
+        result = await call_deepseek(prompt, system_prompt=follow_up_system_prompt, max_tokens=1800)
         
         if LLM_DEBUG:
             print(f"[DEBUG] LLM原始返回长度: {len(result)}")
             print(f"[DEBUG] LLM原始返回前500字符: {result[:500]}")
         
         try:
-            return apply_follow_up_guardrails(parse_llm_json_object(result), session)
+            return apply_follow_up_guardrails(compact_llm_output(parse_llm_json_object(result)), session)
         except ValueError as parse_error:
             print(f"[ERROR] JSON解析失败: {parse_error}")
             return apply_follow_up_guardrails({
@@ -1630,7 +1707,7 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
     patient_info_text = "{}岁{}".format(session.patient_info.age or '未填写', gender_text)
     
     # 最终诊断系统提示词
-    final_system_prompt = EVIDENCE_BASED_SYSTEM_PROMPT + """
+    final_system_prompt = EVIDENCE_BASED_SYSTEM_PROMPT + CONCISE_OUTPUT_PROMPT + """
 
 【最终诊断报告要求】
 1. 主要诊断：置信度≥50%的诊断，按置信度排序，最多3个
@@ -1752,9 +1829,9 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
 """
 
     try:
-        result = await call_deepseek(prompt, system_prompt=final_system_prompt, max_tokens=3500)
+        result = await call_deepseek(prompt, system_prompt=final_system_prompt, max_tokens=2200)
         
-        return normalize_final_report(parse_llm_json_object(result), session)
+        return compact_llm_output(normalize_final_report(compact_llm_output(parse_llm_json_object(result)), session))
     except HTTPException:
         raise
     except Exception as e:
