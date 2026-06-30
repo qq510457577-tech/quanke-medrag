@@ -667,7 +667,12 @@
     createApp({
       data() {
         return {
-          apiBase: "http://127.0.0.1:8000/api",
+          apiBase: (() => {
+            const { protocol, origin, pathname } = window.location;
+            if (protocol === "file:") return "http://127.0.0.1:8000/api";
+            if (pathname.startsWith("/medrag/")) return `${origin}/medrag/api`;
+            return `${origin}/api`;
+          })(),
           health: { ok: false, checked: false, max_follow_up_rounds: 6 },
           loading: false,
           stage: "input",
@@ -716,8 +721,8 @@
       },
       computed: {
         healthText() {
-          if (!this.health.checked) return "正在检查本地后端";
-          return this.health.ok ? "本地后端已连接" : "本地后端未连接，请先运行 启动服务.bat";
+          if (!this.health.checked) return "正在检查后端服务";
+          return this.health.ok ? "后端服务已连接" : "后端服务未连接，请检查服务状态";
         },
         progressPercent() {
           return Math.min(100, Math.round((this.roundCount / this.maxRounds) * 100));
@@ -727,6 +732,7 @@
         async checkHealth() {
           try {
             const response = await fetch(`${this.apiBase}/health`);
+            if (!response.ok) throw new Error(`Health check failed: ${response.status}`);
             const data = await response.json();
             this.health = {
               ok: response.ok,
