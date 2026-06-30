@@ -1,0 +1,348 @@
+[
+  {
+    "id": "ref_catalog_hypertension_2023",
+    "title": "中国高血压防治指南（2023年版）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["高血压", "头痛", "头晕", "胸闷"],
+    "summary": "用于基层高血压筛查、风险分层、降压目标与长期管理的核心指南。",
+    "evidence_paragraphs": [
+      {
+        "label": "适用场景",
+        "text": "建议纳入高血压、头痛、头晕、胸闷等症状或慢病管理场景，支持基层分层评估和长期随访。",
+        "highlights": ["高血压", "风险分层", "长期随访"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_elderly_hypertension_2021",
+    "title": "老年高血压的诊断与治疗中国专家共识（2021）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["高血压", "老年综合评估"],
+    "summary": "适用于老年人血压管理、降压起始与个体化目标制定。",
+    "evidence_paragraphs": [
+      {
+        "label": "老年管理",
+        "text": "强调结合衰弱、多病共存、跌倒风险和耐受性进行老年高血压个体化管理。",
+        "highlights": ["老年人", "个体化管理", "多病共存"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_cad_2018",
+    "title": "中国稳定性冠心病诊断与治疗指南（2018）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["冠心病", "胸痛", "胸闷"],
+    "summary": "支持稳定性胸痛、活动后胸闷及冠心病长期管理路径。",
+    "evidence_paragraphs": [
+      {
+        "label": "胸痛场景",
+        "text": "可用于稳定性胸痛和活动诱发症状的风险评估、检查选择与长期管理。",
+        "highlights": ["稳定性胸痛", "风险评估", "长期管理"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_stemi_2019",
+    "title": "急性ST段抬高型心肌梗死诊断和治疗指南（2019）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["心肌梗死", "胸痛", "胸闷"],
+    "summary": "用于急性胸痛、疑似 STEMI 的急诊识别与处置路径。",
+    "evidence_paragraphs": [
+      {
+        "label": "急诊场景",
+        "text": "适用于压榨性胸痛、大汗、持续不缓解等高危心梗线索的快速识别。",
+        "highlights": ["压榨性胸痛", "大汗", "快速识别"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_hf_2022",
+    "title": "中国心力衰竭诊断和治疗指南（2022）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["心力衰竭", "水肿", "胸闷", "乏力"],
+    "summary": "支持心衰相关水肿、活动后气促与慢病管理。",
+    "evidence_paragraphs": [
+      {
+        "label": "心衰线索",
+        "text": "适用于下肢水肿、夜间憋醒、平卧气短和活动耐量下降的诊断与管理。",
+        "highlights": ["下肢水肿", "夜间憋醒", "平卧气短"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_elderly_hf_2021",
+    "title": "老年慢性心力衰竭诊治中国专家共识（2021）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["心力衰竭", "老年综合评估"],
+    "summary": "强调老年慢性心衰的综合评估与长期管理。",
+    "evidence_paragraphs": [
+      {
+        "label": "老年心衰",
+        "text": "建议结合功能状态、共病、衰弱和依从性开展老年慢性心衰综合管理。",
+        "highlights": ["功能状态", "共病", "综合管理"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_af_2023",
+    "title": "心房颤动：目前的认识和治疗建议（2023）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["房颤", "心悸", "头晕"],
+    "summary": "用于心悸、脉搏不齐和卒中风险评估相关场景。",
+    "evidence_paragraphs": [
+      {
+        "label": "房颤线索",
+        "text": "适用于发作性心悸、头晕、脉律不齐及抗凝风险评估场景。",
+        "highlights": ["发作性心悸", "脉律不齐", "抗凝风险"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_ais_2023",
+    "title": "中国急性缺血性脑卒中诊治指南（2023）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["脑卒中", "麻木", "头晕", "头痛"],
+    "summary": "支持卒中高危症状识别、急诊转诊和早期评估。",
+    "evidence_paragraphs": [
+      {
+        "label": "卒中红旗征",
+        "text": "适用于突发单侧麻木无力、言语不清、头晕步态不稳等急性神经系统症状。",
+        "highlights": ["突发", "单侧麻木无力", "言语不清"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_ich_2019",
+    "title": "中国脑出血诊治指南（2019）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["脑出血", "头痛", "麻木"],
+    "summary": "用于突发剧烈头痛、意识障碍或局灶神经功能缺损的识别。",
+    "evidence_paragraphs": [
+      {
+        "label": "高危头痛",
+        "text": "可用于突发最严重头痛、呕吐、意识改变等脑出血高危场景。",
+        "highlights": ["最严重头痛", "意识改变", "脑出血"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_stroke_rehab_2021",
+    "title": "中国脑卒中康复治疗指南（2021）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["脑卒中", "活动受限", "康复"],
+    "summary": "用于卒中后活动受限、功能恢复和康复路径设计。",
+    "evidence_paragraphs": [
+      {
+        "label": "康复场景",
+        "text": "适用于卒中后活动受限、肢体功能障碍与基层康复管理衔接。",
+        "highlights": ["活动受限", "功能障碍", "基层康复"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_t2dm_2022",
+    "title": "中国2型糖尿病防治指南（2022年版）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["糖尿病", "乏力", "消瘦", "麻木"],
+    "summary": "支持基层 2 型糖尿病筛查、并发症评估和长期随访。",
+    "evidence_paragraphs": [
+      {
+        "label": "基层慢病管理",
+        "text": "适用于口干、多饮、多尿、消瘦、麻木等糖尿病及并发症线索的持续管理。",
+        "highlights": ["口干", "消瘦", "麻木", "持续管理"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_elderly_diabetes_2024",
+    "title": "中国老年糖尿病诊疗指南（2024年版）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["糖尿病", "老年综合评估"],
+    "summary": "用于老年糖尿病个体化目标、低血糖风险与共病管理。",
+    "evidence_paragraphs": [
+      {
+        "label": "老年糖尿病",
+        "text": "强调老年患者需结合认知、功能和低血糖风险设定个体化目标。",
+        "highlights": ["认知", "功能", "低血糖风险", "个体化目标"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_lipid_2023",
+    "title": "中国成人血脂异常防治指南（2023年）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["血脂", "冠心病", "脑卒中"],
+    "summary": "用于 ASCVD 风险分层和降脂管理。",
+    "evidence_paragraphs": [
+      {
+        "label": "动脉粥样硬化风险",
+        "text": "适用于冠心病、脑卒中和高危人群的血脂分层及长期管理。",
+        "highlights": ["ASCVD", "风险分层", "长期管理"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_copd_2024",
+    "title": "慢性阻塞性肺疾病诊治指南（2024年修订版）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["COPD", "咳嗽", "胸闷", "呼吸困难"],
+    "summary": "用于慢性咳嗽、咳痰、胸闷气促和急性加重评估。",
+    "evidence_paragraphs": [
+      {
+        "label": "呼吸症状场景",
+        "text": "适用于慢性咳嗽、活动后气促、反复急性加重与肺功能评估场景。",
+        "highlights": ["慢性咳嗽", "活动后气促", "急性加重"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_alz_2023",
+    "title": "中国阿尔茨海默病诊疗指南（2023年版）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["阿尔茨海默病", "认知障碍"],
+    "summary": "用于认知下降、记忆减退和老年综合评估场景。",
+    "evidence_paragraphs": [
+      {
+        "label": "认知场景",
+        "text": "适用于记忆下降、执行功能减退和痴呆鉴别诊断。",
+        "highlights": ["记忆下降", "执行功能减退", "痴呆鉴别"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_dementia_2021",
+    "title": "老年期痴呆防治指南（2021）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["痴呆", "老年综合评估"],
+    "summary": "用于老年痴呆筛查、照护和共病管理。",
+    "evidence_paragraphs": [
+      {
+        "label": "老年照护",
+        "text": "强调早期筛查、家庭照护和多学科管理。",
+        "highlights": ["早期筛查", "家庭照护", "多学科管理"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_parkinson_2020",
+    "title": "中国帕金森病治疗指南（第四版，2020）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["帕金森病", "步态异常", "老年综合评估"],
+    "summary": "用于运动迟缓、震颤、步态异常相关场景。",
+    "evidence_paragraphs": [
+      {
+        "label": "运动症状",
+        "text": "适用于震颤、僵硬、运动迟缓和步态不稳的识别与长期管理。",
+        "highlights": ["震颤", "运动迟缓", "步态不稳"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_osteoporosis_2022",
+    "title": "中国老年骨质疏松症诊疗指南（2022）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["骨质疏松", "跌倒风险", "老年综合评估"],
+    "summary": "用于骨折风险评估、跌倒预防与老年管理。",
+    "evidence_paragraphs": [
+      {
+        "label": "骨折风险",
+        "text": "强调骨折风险筛查、跌倒评估和长期干预。",
+        "highlights": ["骨折风险", "跌倒评估", "长期干预"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_oa_2021",
+    "title": "中国骨关节炎诊疗指南（2021年版）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["骨关节炎", "活动受限"],
+    "summary": "用于骨关节疼痛、晨僵短暂和活动受限场景。",
+    "evidence_paragraphs": [
+      {
+        "label": "关节症状",
+        "text": "适用于慢性关节疼痛、活动受限和功能恢复管理。",
+        "highlights": ["慢性关节疼痛", "活动受限", "功能恢复"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_bph_2021",
+    "title": "良性前列腺增生诊断治疗指南（2021版）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["前列腺增生", "老年综合评估"],
+    "summary": "用于下尿路症状评估和男性老年慢病管理。",
+    "evidence_paragraphs": [
+      {
+        "label": "下尿路症状",
+        "text": "适用于尿频、夜尿、排尿困难等症状的分层评估。",
+        "highlights": ["尿频", "夜尿", "排尿困难"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_cga_2017",
+    "title": "中国老年综合评估技术应用专家共识（2017）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["老年综合评估", "共病管理"],
+    "summary": "作为老年综合评估总框架，可用于功能、认知、营养和共病管理。",
+    "evidence_paragraphs": [
+      {
+        "label": "评估框架",
+        "text": "建议系统覆盖功能、认知、情绪、营养、跌倒和社会支持等维度。",
+        "highlights": ["功能", "认知", "营养", "社会支持"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_geriatric_specs_2025",
+    "title": "老年病科诊疗指南及操作规范（2025版）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["老年综合评估", "共病管理"],
+    "summary": "适合补充老年综合征、多病共存和住门诊衔接管理知识。",
+    "evidence_paragraphs": [
+      {
+        "label": "综合管理",
+        "text": "可用于老年共病、多药使用、功能衰退和连续照护设计。",
+        "highlights": ["共病", "多药使用", "连续照护"]
+      }
+    ]
+  },
+  {
+    "id": "ref_catalog_sarcopenia_2021",
+    "title": "中国老年人肌少症诊疗专家共识（2021）",
+    "source": "指南目录补充",
+    "source_type": "curated_catalog",
+    "related_topics": ["肌少症", "消瘦", "乏力", "老年综合评估"],
+    "summary": "用于消瘦、乏力、功能下降和跌倒风险评估场景。",
+    "evidence_paragraphs": [
+      {
+        "label": "功能下降",
+        "text": "适用于肌力下降、步速减慢、体重下降和活动受限人群的评估。",
+        "highlights": ["肌力下降", "步速减慢", "体重下降", "活动受限"]
+      }
+    ]
+  }
+]
+

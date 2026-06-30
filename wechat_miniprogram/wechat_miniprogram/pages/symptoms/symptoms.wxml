@@ -1,0 +1,114 @@
+<!--pages/symptoms/symptoms.wxml-->
+<view class="container">
+  <view class="page-title">描述您的症状</view>
+  <view class="page-subtitle">请详细描述您目前有哪些不适</view>
+
+  <!-- 症状列表 -->
+  <view class="symptoms-list">
+    <block wx:for="{{symptoms}}" wx:key="index">
+      <view class="symptom-card">
+        <view class="card-header">
+          <text class="card-number">症状 {{index + 1}}</text>
+          <view class="delete-btn" wx:if="{{symptoms.length > 1}}" bindtap="removeSymptom" data-index="{{index}}">
+            <text>✕</text>
+          </view>
+        </view>
+
+        <!-- 症状描述 -->
+        <view class="form-item">
+          <text class="label">症状描述</text>
+          <textarea 
+            class="textarea-field symptom-desc" 
+            placeholder="如：头晕、头痛、胸闷、腹痛等" 
+            value="{{item.description}}"
+            bindinput="onSymptomInput"
+            data-index="{{index}}"
+            maxlength="100"
+          />
+        </view>
+
+        <!-- 持续时间 -->
+        <view class="form-item">
+          <text class="label">持续时间</text>
+          <view class="duration-picker">
+            <picker mode="selector" range="{{years}}" bindchange="onDurationChange" data-index="{{index}}" data-type="years">
+              <view class="picker-btn">
+                <text>{{item.durationYears || 0}}</text>
+                <text class="unit">年</text>
+              </view>
+            </picker>
+            <picker mode="selector" range="{{months}}" bindchange="onDurationChange" data-index="{{index}}" data-type="months">
+              <view class="picker-btn">
+                <text>{{item.durationMonths || 0}}</text>
+                <text class="unit">月</text>
+              </view>
+            </picker>
+            <picker mode="selector" range="{{days}}" bindchange="onDurationChange" data-index="{{index}}" data-type="days">
+              <view class="picker-btn">
+                <text>{{item.durationDays || 0}}</text>
+                <text class="unit">日</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <!-- 严重程度 -->
+        <view class="form-item">
+          <text class="label">严重程度</text>
+          <view class="severity-picker">
+            <view 
+              wx:for="{{[1,2,3,4,5]}}" 
+              wx:for-item="level"
+              wx:key="level"
+              class="severity-btn {{item.severity >= level ? 'active' : ''}}"
+              bindtap="setSeverity"
+              data-index="{{index}}"
+              data-level="{{level}}"
+            >
+              {{level}}
+            </view>
+          </view>
+          <view class="severity-label">{{severityText[item.severity] || '轻'}}</view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 添加更多症状 -->
+  <view class="add-symptom-btn" bindtap="addSymptom">
+    <text>+ 添加更多症状</text>
+  </view>
+
+  <!-- 常见症状快捷添加 -->
+  <view class="quick-add">
+    <text class="quick-title">快速添加：</text>
+    <view class="quick-tags">
+      <text 
+        wx:for="{{commonSymptoms}}" 
+        wx:key="index" 
+        class="quick-tag"
+        bindtap="quickAddSymptom"
+        data-symptom="{{item}}"
+      >{{item}}</text>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <button class="btn-primary submit-btn" bindtap="submitSymptoms" disabled="{{isLoading}}">
+    <text wx:if="{{!isLoading}}">开始AI诊断</text>
+    <text wx:else>AI分析中...</text>
+  </button>
+
+  <view class="back-btn" bindtap="goBack">
+    <text>返回上一步</text>
+  </view>
+
+  <!-- 加载动画 -->
+  <view class="loading-mask" wx:if="{{isLoading}}">
+    <view class="loading-box">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">AI正在分析症状...</text>
+      <text class="loading-subtext">请稍候</text>
+    </view>
+  </view>
+</view>

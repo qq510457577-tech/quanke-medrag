@@ -1,0 +1,134 @@
+<!--pages/question/question.wxml-->
+<view class="question-page">
+  <!-- 顶部进度 -->
+  <view class="progress-bar">
+    <view class="progress-info">
+      <text class="progress-text">已完成 {{answeredCount}} / {{currentQuestions.length}} 题</text>
+      <text class="round-text">第 {{currentRound}}/4 轮</text>
+    </view>
+    <view class="progress-track">
+      <view class="progress-fill" style="width: {{progressPercent}}%"></view>
+    </view>
+  </view>
+
+  <!-- 滑动卡片区域 -->
+  <view class="card-container">
+    <view 
+      class="card-wrapper" 
+      bindtouchstart="touchStart" 
+      bindtouchmove="touchMove" 
+      bindtouchend="touchEnd"
+      style="transform: translateX({{translateX}}rpx) rotate({{rotate}}deg);"
+    >
+      <view class="question-card-content">
+        <!-- 问题头部 -->
+        <view class="card-header">
+          <view class="question-target">
+            <text class="target-icon">🎯</text>
+            <text>{{currentQuestion.target_symptom || '症状分析'}}</text>
+          </view>
+          <view class="question-type">
+            <text wx:if="{{currentQuestion.input_type === 'single'}}">单选</text>
+            <text wx:elif="{{currentQuestion.input_type === 'multiple'}}">多选</text>
+            <text wx:else>问答</text>
+          </view>
+        </view>
+
+        <!-- 问题内容 -->
+        <view class="question-body">
+          <text class="question-text">{{currentQuestion.question}}</text>
+        </view>
+
+        <!-- 问题提示 -->
+        <view class="question-hint" wx:if="{{currentQuestion.purpose}}">
+          <text class="hint-icon">💡</text>
+          <text>{{currentQuestion.purpose}}</text>
+        </view>
+
+        <!-- 回答选项 -->
+        <view class="answer-section">
+          <!-- 单选 -->
+          <view wx:if="{{currentQuestion.input_type === 'single'}}" class="options-list">
+            <view 
+              wx:for="{{currentQuestion.options}}" 
+              wx:key="index"
+              class="option-btn {{currentQuestion.answer === item ? 'selected' : ''}}"
+              bindtap="selectSingle"
+              data-value="{{item}}"
+            >
+              {{item}}
+            </view>
+          </view>
+
+          <!-- 多选 -->
+          <view wx:elif="{{currentQuestion.input_type === 'multiple'}}" class="options-list multi">
+            <view 
+              wx:for="{{currentQuestion.options}}" 
+              wx:key="index"
+              class="option-btn {{currentQuestion.answers && currentQuestion.answers.indexOf(item) > -1 ? 'selected' : ''}}"
+              bindtap="toggleMulti"
+              data-value="{{item}}"
+            >
+              <text class="check-icon" wx:if="{{currentQuestion.answers && currentQuestion.answers.indexOf(item) > -1}}">✓</text>
+              {{item}}
+            </view>
+          </view>
+
+          <!-- 是/否 -->
+          <view wx:elif="{{currentQuestion.input_type === 'yesno'}}" class="yesno-list">
+            <view 
+              class="yesno-btn {{currentQuestion.answer === '是' || currentQuestion.answer === '有' ? 'yes selected' : ''}}"
+              bindtap="selectYesNo"
+              data-value="是"
+            >
+              ✓ 是/有
+            </view>
+            <view 
+              class="yesno-btn {{currentQuestion.answer === '否' || currentQuestion.answer === '无' ? 'no selected' : ''}}"
+              bindtap="selectYesNo"
+              data-value="否"
+            >
+              ✕ 否/无
+            </view>
+          </view>
+        </view>
+
+        <!-- 滑动提示 -->
+        <view class="swipe-hint">
+          <text wx:if="{{hasNext}}">← 左滑下一题</text>
+          <text wx:if="{{hasPrev}}">右滑上一题 →</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作 -->
+  <view class="bottom-actions">
+    <view class="action-btns">
+      <view 
+        class="action-btn prev" 
+        bindtap="prevQuestion" 
+        wx:if="{{currentQuestionIndex > 0}}"
+      >
+        <text>← 上一题</text>
+      </view>
+      
+      <button 
+        class="action-btn next {{canSubmit ? '' : 'disabled'}}" 
+        bindtap="nextQuestion"
+        disabled="{{!canSubmit}}"
+      >
+        <text wx:if="{{!isLastQuestion}}">下一题 →</text>
+        <text wx:else>查看诊断 →</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-overlay" wx:if="{{isLoading}}">
+    <view class="loading-box">
+      <view class="loading-spinner"></view>
+      <text>AI思考中...</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,15 @@
+.env
+.env.local
+*.env.local
+medrag_backend/.env
+medrag_backend/.env.local
+__pycache__/
+*.pyc
+tmp_server.*.log
+*.zip
+*.tar
+medrag_backend/app/data/vector_store/
+extract/local_reference_drafts.json
+.DS_Store
+~$*.xlsx
+project.private.config.json

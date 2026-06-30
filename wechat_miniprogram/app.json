@@ -1,0 +1,18 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/patient-info/patient-info",
+    "pages/symptoms/symptoms",
+    "pages/question/question",
+    "pages/result/result"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#1a5276",
+    "navigationBarTitleText": "AI全科医生",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f6fa"
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

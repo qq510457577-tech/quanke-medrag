@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全科医生辅助诊断系统</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    :root {
+      --bg: #eef4f7;
+      --panel: #ffffff;
+      --line: #d6e0e8;
+      --text: #1f2933;
+      --muted: #66788a;
+      --brand: #0f4c5c;
+      --brand-soft: #e5f0f3;
+      --accent: #f2a65a;
+      --danger: #bf3b3b;
+      --ok: #1f8a5b;
+      --shadow: 0 14px 34px rgba(15, 76, 92, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(15, 76, 92, 0.08), transparent 34%),
+        linear-gradient(180deg, #f8fbfc 0%, var(--bg) 100%);
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0d3f4b 0%, #15616d 100%);
+      color: #fff;
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      letter-spacing: 0.5px;
+    }
+
+    .hero p {
+      margin: 0;
+      line-height: 1.8;
+      opacity: 0.94;
+      max-width: 920px;
+    }
+
+    .hero-row,
+    .chips,
+    .actions,
+    .mini-list,
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-row { margin-top: 16px; }
+
+    .chip,
+    .mini-item,
+    .badge {
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.14);
+      font-size: 13px;
+    }
+
+    .mini-item,
+    .badge {
+      padding: 6px 10px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      border: 1px solid #c5d8de;
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f5c96a;
+    }
+
+    .dot.ok { background: #4ed198; }
+    .dot.error { background: #ff8f8f; }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+      color: var(--brand);
+    }
+
+    .subhead {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 11px 12px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 11px 16px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover:not(:disabled) { transform: translateY(-1px); }
+    button:disabled { opacity: 0.62; cursor: not-allowed; }
+
+    .primary { background: var(--brand); color: #fff; }
+    .secondary { background: #fff; color: var(--brand); border: 1px solid var(--line); }
+    .option { background: #fff; color: var(--text); border: 1px solid var(--line); }
+    .option.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+    .symptom-card,
+    .question-card,
+    .diagnosis-card,
+    .reference-card,
+    .summary-block {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fbfdfe;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .symptom-head,
+    .diagnosis-head,
+    .candidate-head,
+    .dialog-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .symptom-title,
+    .diagnosis-name,
+    .candidate-name {
+      font-weight: 700;
+      color: var(--brand);
+    }
+
+    .question-card h3,
+    .summary-block h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: var(--brand);
+    }
+
+    .question-meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    .progress-card {
+      background: #fbfdfe;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .progress-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #e3edf1;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand), #2f8997);
+      width: 0;
+      transition: width 0.25s ease;
+    }
+
+    .score {
+      color: var(--brand);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .graph-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .graph-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 14px;
+    }
+
+    .graph-card h4 {
+      margin: 0 0 10px;
+      color: var(--brand);
+    }
+
+    .graph-label {
+      margin: 10px 0 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .warning {
+      color: var(--danger) !important;
+      font-weight: 700;
+    }
+
+    .summary-block p,
+    .summary-block li {
+      line-height: 1.75;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .reference-link {
+      display: inline-flex;
+      margin-top: 8px;
+      color: var(--brand);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .evidence-paragraph {
+      border-left: 4px solid var(--accent);
+      background: #fff9f3;
+      padding: 12px 12px 12px 14px;
+      border-radius: 0 14px 14px 0;
+      margin-bottom: 12px;
+    }
+
+    .evidence-paragraph h4 {
+      margin: 0 0 8px;
+      color: var(--brand);
+      font-size: 14px;
+    }
+
+    .evidence-paragraph p {
+      margin: 0;
+      line-height: 1.8;
+      color: #5a6673;
+      font-size: 14px;
+    }
+
+    .highlight {
+      color: #d23c3c;
+      font-weight: 700;
+      background: rgba(210, 60, 60, 0.08);
+      padding: 0 3px;
+      border-radius: 4px;
+    }
+
+    .dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 34, 43, 0.42);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 20;
+    }
+
+    .dialog {
+      width: min(860px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 26px 60px rgba(15, 34, 43, 0.24);
+    }
+
+    .dialog h3 {
+      margin: 0 0 6px;
+      color: var(--brand);
+      font-size: 22px;
+    }
+
+    @media (max-width: 860px) {
+      .grid,
+      .report-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .symptom-head,
+      .diagnosis-head,
+      .candidate-head,
+      .progress-top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="page">
+    <section class="hero">
+      <h1>全科医生辅助诊断系统</h1>
+      <p>遵循“主诉拆解 -> 阳性/阴性症状追问 -> 红旗征排查 -> 体征与检查补充 -> 诊断收敛”的分层临床思维链。问诊阶段只呈现当前轮问题，诊断权重与推理过程在内部动态更新，最终完成追问后集中展示。</p>
+      <div class="hero-row">
+        <span class="chip">
+          <span class="dot" :class="health.ok ? 'ok' : (health.checked ? 'error' : '')"></span>
+          {{ healthText }}
+        </span>
+        <span class="chip">最多追问 {{ maxRounds }} 轮</span>
+        <span class="chip">前端不暴露模型密钥</span>
+      </div>
+    </section>
+
+    <section class="panel" v-if="stage === 'input'">
+      <h2>第 0 步：录入基础信息与主诉</h2>
+      <div class="subhead">请按基层门诊真实场景录入基础信息和主诉。提交后进入分层追问页面，系统会在后台动态调整诊断权重。</div>
+
+      <div class="grid">
+        <div class="field">
+          <label>年龄</label>
+          <input type="number" v-model.number="patient.age" min="0" max="150" placeholder="例如 46">
+        </div>
+        <div class="field">
+          <label>性别</label>
+          <select v-model="patient.gender">
+            <option value="">请选择</option>
+            <option value="male">男</option>
+            <option value="female">女</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>既往病史</label>
+        <input v-model.trim="patient.history" placeholder="例如：高血压、糖尿病、冠心病">
+      </div>
+      <div class="field">
+        <label>过敏史</label>
+        <input v-model.trim="patient.allergies" placeholder="例如：青霉素过敏">
+      </div>
+
+      <div class="chips">
+        <button class="secondary" type="button" v-for="preset in presets" :key="preset" @click="addPreset(preset)">{{ preset }}</button>
+      </div>
+
+      <div v-for="(symptom, index) in symptoms" :key="index" class="symptom-card">
+        <div class="symptom-head">
+          <div class="symptom-title">主诉/症状 {{ index + 1 }}</div>
+          <button class="secondary" type="button" @click="removeSymptom(index)" :disabled="symptoms.length === 1">删除</button>
+        </div>
+        <div class="field">
+          <label>症状描述</label>
+          <textarea v-model.trim="symptom.description" placeholder="例如：头痛 3 天，伴恶心，活动后加重"></textarea>
+        </div>
+        <div class="grid">
+          <div class="field">
+            <label>持续天数</label>
+            <input type="number" v-model.number="symptom.duration_days" min="0">
+          </div>
+          <div class="field">
+            <label>严重程度（1-5）</label>
+            <select v-model.number="symptom.severity">
+              <option :value="1">1</option>
+              <option :value="2">2</option>
+              <option :value="3">3</option>
+              <option :value="4">4</option>
+              <option :value="5">5</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="secondary" type="button" @click="addSymptom">新增症状</button>
+        <button class="primary" type="button" @click="startDiagnosis" :disabled="loading">
+          {{ loading ? "处理中..." : "开始分层追问" }}
+        </button>
+      </div>
+    </section>
+
+    <section class="panel" v-if="stage === 'followup'">
+      <h2>第 {{ roundCount }} 轮：{{ summary.stage_label || "分层追问" }}</h2>
+      <div class="subhead">本阶段只显示当前轮问答。候选诊断权重、知识图谱命中和指南证据会在后台更新，并在追问完成后统一展示。</div>
+
+      <div class="progress-card">
+        <div class="progress-top">
+          <div>
+            <strong>问诊进度</strong>
+            <div class="subhead" style="margin: 4px 0 0;">{{ roundCount }} / {{ maxRounds }} 轮</div>
+          </div>
+          <span class="badge">{{ summary.stage_label || "动态追问" }}</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+        </div>
+      </div>
+
+      <div class="question-card" v-for="question in currentQuestions" :key="question.question_id">
+        <h3>{{ question.question }}</h3>
+        <div class="question-meta">
+          追问目的：{{ question.purpose || "补充分层诊断信息" }}<br>
+          临床意图：{{ question.clinical_intent || summary.stage_label || "递进式追问" }}
+        </div>
+        <div class="options">
+          <button
+            v-for="option in question.options"
+            :key="option"
+            type="button"
+            class="option"
+            :class="{ active: isOptionSelected(question, option) }"
+            @click="toggleAnswer(question, option)"
+          >
+            {{ option }}
+          </button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" type="button" @click="submitFollowUp" :disabled="loading">
+          {{ loading ? "处理中..." : (roundCount >= maxRounds ? "完成追问并生成报告" : "提交本轮并进入下一轮") }}
+        </button>
+      </div>
+    </section>
+
+    <section class="panel" v-if="stage === 'final' && finalReport.diagnoses.length">
+      <h2>最终辅助诊断报告</h2>
+      <div class="subhead">追问完成后，系统集中展示候选诊断权重、诊断依据、知识图谱命中、指南与参考文献，以及可展开的循证段落。</div>
+
+      <div class="report-grid">
+        <div>
+          <div class="diagnosis-card" v-for="(item, index) in finalReport.diagnoses" :key="item.name + index">
+            <div class="diagnosis-head">
+              <div>
+                <div class="diagnosis-name">{{ item.name }}</div>
+                <div class="subhead">{{ index === 0 ? "主要诊断" : "次要诊断" }}</div>
+              </div>
+              <div class="score">{{ item.probability || 0 }}%</div>
+            </div>
+
+            <div class="summary-block" v-if="item.basis && item.basis.length">
+              <h3>诊断依据</h3>
+              <ul>
+                <li v-for="basis in item.basis" :key="basis">{{ basis }}</li>
+              </ul>
+            </div>
+
+            <div class="summary-block" v-if="item.next_steps && item.next_steps.length">
+              <h3>下一步建议</h3>
+              <ul>
+                <li v-for="step in item.next_steps" :key="step">{{ step }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="summary-block" v-if="finalReport.clinical_reasoning">
+            <h3>临床推理过程</h3>
+            <p>{{ finalReport.clinical_reasoning }}</p>
+          </div>
+
+          <div class="summary-block" v-if="summary.risk_stratification || finalReport.risk_stratification">
+            <h3>风险结论</h3>
+            <p :class="{ warning: (summary.risk_stratification || finalReport.risk_stratification).includes('急诊') }">
+              {{ summary.risk_stratification || finalReport.risk_stratification }}
+            </p>
+          </div>
+
+          <div class="summary-block" v-if="finalReport.care_plan.length">
+            <h3>基层处置建议</h3>
+            <ul>
+              <li v-for="item in finalReport.care_plan" :key="item">{{ item }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-block" v-if="finalReport.knowledge_graph_hits.length">
+        <h3>知识图谱命中</h3>
+        <div class="graph-grid">
+          <div class="graph-card" v-for="hit in finalReport.knowledge_graph_hits" :key="hit.symptom">
+            <h4>{{ hit.symptom }}</h4>
+            <div class="graph-label">可能部位</div>
+            <div class="mini-list">
+              <span class="mini-item" v-for="part in hit.body_parts" :key="part">{{ part }}</span>
+            </div>
+            <div class="graph-label">活动限制</div>
+            <div class="mini-list">
+              <span class="mini-item" v-for="limit in hit.activity_limitations" :key="limit">{{ limit }}</span>
+            </div>
+            <div class="graph-label">候选疾病</div>
+            <div class="mini-list">
+              <span class="mini-item" v-for="disease in hit.candidate_diseases" :key="disease">{{ disease }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-block" v-if="finalReport.diagnostic_basis.length">
+        <h3>分诊断依据汇总</h3>
+        <div class="reference-card" v-for="item in finalReport.diagnostic_basis" :key="item.diagnosis">
+          <div class="candidate-name">{{ item.diagnosis }}</div>
+          <div class="subhead">{{ item.basis }}</div>
+          <div class="mini-list" v-if="item.recommended_exams && item.recommended_exams.length">
+            <span class="mini-item" v-for="exam in item.recommended_exams" :key="exam">{{ exam }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-block" v-if="finalReport.references.length">
+        <h3>指南与参考文献</h3>
+        <div class="reference-card" v-for="reference in finalReport.references" :key="reference.id || (reference.title + reference.source)">
+          <div class="candidate-head">
+            <div>
+              <div class="candidate-name">{{ reference.title }}</div>
+              <div class="subhead">{{ reference.source }}</div>
+            </div>
+          </div>
+          <div class="subhead">{{ reference.summary }}</div>
+          <div class="actions">
+            <button class="secondary" type="button" @click="openReference(reference, finalReport.major_diagnosis || '综合判断')">展开循证详情</button>
+            <a v-if="reference.source_url" class="reference-link" :href="reference.source_url" target="_blank" rel="noreferrer">打开来源</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-block" v-if="finalReport.evidence_paragraphs.length">
+        <h3>证据高亮预览</h3>
+        <div class="evidence-paragraph" v-for="paragraph in finalReport.evidence_paragraphs" :key="paragraph.label + paragraph.text">
+          <h4>{{ paragraph.label }}</h4>
+          <p v-html="renderParagraph(paragraph)"></p>
+        </div>
+      </div>
+
+      <div class="summary-block">
+        <h3>说明</h3>
+        <p>{{ finalReport.disclaimer || "本结果仅供基层全科辅助参考，不能替代执业医生面诊。" }}</p>
+      </div>
+
+      <div class="actions">
+        <button class="secondary" type="button" @click="resetAll">重新开始</button>
+      </div>
+    </section>
+
+    <div class="dialog-backdrop" v-if="referenceDialog.open" @click.self="closeReference">
+      <div class="dialog">
+        <div class="dialog-head">
+          <div>
+            <h3>{{ referenceDialog.title }}</h3>
+            <div class="subhead">{{ referenceDialog.source }} | 关联诊断：{{ referenceDialog.disease }}</div>
+          </div>
+          <button class="secondary" type="button" @click="closeReference">关闭</button>
+        </div>
+
+        <div class="summary-block">
+          <h3>文献摘要</h3>
+          <p>{{ referenceDialog.summary }}</p>
+          <a v-if="referenceDialog.source_url" class="reference-link" :href="referenceDialog.source_url" target="_blank" rel="noreferrer">打开原始来源</a>
+        </div>
+
+        <div class="summary-block">
+          <h3>循证过程段落</h3>
+          <div class="evidence-paragraph" v-for="paragraph in referenceDialog.evidence_paragraphs" :key="paragraph.label + paragraph.text">
+            <h4>{{ paragraph.label }}</h4>
+            <p v-html="renderParagraph(paragraph)"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          apiBase: "http://127.0.0.1:8000/api",
+          health: { ok: false, checked: false, max_follow_up_rounds: 6 },
+          loading: false,
+          stage: "input",
+          roundCount: 0,
+          maxRounds: 6,
+          patient: { age: null, gender: "", history: "", allergies: "" },
+          symptoms: [{ description: "", duration_days: 0, severity: 1 }],
+          presets: ["发热", "咳嗽", "乏力", "头痛", "头晕", "胸痛", "胸闷", "腹痛", "腹胀", "返酸", "水肿", "消瘦"],
+          sessionId: "",
+          diagnosisHypothesis: [],
+          currentQuestions: [],
+          summary: {
+            stage_label: "",
+            symptom_analysis: "",
+            reasoning_chain: "",
+            diagnosis_summary: "",
+            risk_stratification: "",
+            emergency_warning: "",
+            required_examinations: [],
+            optional_examinations: [],
+            knowledge_graph_hits: [],
+          },
+          finalReport: {
+            diagnoses: [],
+            knowledge_graph_hits: [],
+            diagnostic_basis: [],
+            references: [],
+            evidence_paragraphs: [],
+            highlights: [],
+            care_plan: [],
+            major_diagnosis: "",
+            risk_stratification: "",
+            clinical_reasoning: "",
+            disclaimer: "",
+          },
+          referenceDialog: {
+            open: false,
+            title: "",
+            source: "",
+            summary: "",
+            disease: "",
+            evidence_paragraphs: [],
+            source_url: "",
+          },
+        };
+      },
+      computed: {
+        healthText() {
+          if (!this.health.checked) return "正在检查本地后端";
+          return this.health.ok ? "本地后端已连接" : "本地后端未连接，请先运行 启动服务.bat";
+        },
+        progressPercent() {
+          return Math.min(100, Math.round((this.roundCount / this.maxRounds) * 100));
+        },
+      },
+      methods: {
+        async checkHealth() {
+          try {
+            const response = await fetch(`${this.apiBase}/health`);
+            const data = await response.json();
+            this.health = {
+              ok: response.ok,
+              checked: true,
+              max_follow_up_rounds: data.max_follow_up_rounds || 6,
+            };
+            this.maxRounds = data.max_follow_up_rounds || 6;
+          } catch (error) {
+            this.health.ok = false;
+            this.health.checked = true;
+          }
+        },
+        addSymptom() {
+          this.symptoms.push({ description: "", duration_days: 0, severity: 1 });
+        },
+        removeSymptom(index) {
+          if (this.symptoms.length > 1) this.symptoms.splice(index, 1);
+        },
+        addPreset(preset) {
+          const empty = this.symptoms.find((item) => !item.description.trim());
+          if (empty) {
+            empty.description = preset;
+            return;
+          }
+          this.symptoms.push({ description: preset, duration_days: 0, severity: 1 });
+        },
+        validateInput() {
+          if (!this.patient.age || this.patient.age < 0 || this.patient.age > 150) {
+            alert("请填写有效年龄");
+            return false;
+          }
+          if (!this.patient.gender) {
+            alert("请选择性别");
+            return false;
+          }
+          if (!this.symptoms.some((item) => item.description.trim())) {
+            alert("请至少填写一个主诉或症状");
+            return false;
+          }
+          return true;
+        },
+        hydrateQuestions(questions) {
+          return (questions || []).map((item) => ({
+            ...item,
+            selected: item.input_type === "multiple" ? [] : "",
+          }));
+        },
+        applySummary(data) {
+          this.summary.stage_label = data.stage_label || this.summary.stage_label;
+          this.summary.symptom_analysis = data.symptom_analysis || this.summary.symptom_analysis;
+          this.summary.reasoning_chain = data.reasoning_chain || this.summary.reasoning_chain;
+          this.summary.diagnosis_summary = data.diagnosis_summary || this.summary.diagnosis_summary;
+          this.summary.risk_stratification = data.risk_stratification || this.summary.risk_stratification;
+          this.summary.emergency_warning = data.emergency_warning || this.summary.emergency_warning;
+          this.summary.required_examinations = data.required_examinations || [];
+          this.summary.optional_examinations = data.optional_examinations || [];
+          this.summary.knowledge_graph_hits = data.knowledge_graph_hits || [];
+          this.roundCount = data.round_count || this.roundCount;
+          this.maxRounds = data.max_rounds || this.maxRounds;
+        },
+        async startDiagnosis() {
+          if (!this.validateInput()) return;
+          this.loading = true;
+          try {
+            const response = await fetch(`${this.apiBase}/diagnosis/start`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                patient: this.patient,
+                symptoms: this.symptoms
+                  .filter((item) => item.description.trim())
+                  .map((item) => ({
+                    description: item.description.trim(),
+                    duration_days: Number(item.duration_days || 0),
+                    duration_years: 0,
+                    duration_months: 0,
+                    severity: Number(item.severity || 1),
+                  })),
+              }),
+            });
+            if (!response.ok) throw new Error("start failed");
+            const data = await response.json();
+            this.sessionId = data.session_id;
+            this.diagnosisHypothesis = data.differential_diagnoses || [];
+            this.currentQuestions = this.hydrateQuestions(data.first_round_questions || data.current_questions);
+            this.roundCount = 1;
+            this.maxRounds = data.max_rounds || this.maxRounds;
+            this.applySummary(data);
+
+            if (data.is_emergency || !this.currentQuestions.length) {
+              await this.fetchFinal([]);
+            } else {
+              this.stage = "followup";
+            }
+          } catch (error) {
+            alert("启动辅助问诊失败，请确认本地后端已启动。");
+          } finally {
+            this.loading = false;
+          }
+        },
+        toggleAnswer(question, option) {
+          if (question.input_type === "multiple") {
+            const selected = question.selected || [];
+            question.selected = selected.includes(option)
+              ? selected.filter((item) => item !== option)
+              : [...selected, option];
+            return;
+          }
+          question.selected = option;
+        },
+        isOptionSelected(question, option) {
+          if (question.input_type === "multiple") return (question.selected || []).includes(option);
+          return question.selected === option;
+        },
+        buildAnswers() {
+          return this.currentQuestions
+            .filter((item) => Array.isArray(item.selected) ? item.selected.length > 0 : item.selected)
+            .map((item) => ({
+              question_id: item.question_id,
+              question: item.question,
+              answer: item.selected,
+              answer_type: item.input_type,
+            }));
+        },
+        async submitFollowUp() {
+          const answers = this.buildAnswers();
+          if (!answers.length) {
+            alert("请至少回答一个问题");
+            return;
+          }
+          this.loading = true;
+          try {
+            const response = await fetch(`${this.apiBase}/diagnosis/follow-up`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ session_id: this.sessionId, answers }),
+            });
+            if (!response.ok) throw new Error("follow-up failed");
+            const data = await response.json();
+            this.applySummary(data);
+            this.applyDiagnosisUpdates(data.diagnosis_updates || []);
+
+            if (data.is_diagnosis_clear || !(data.next_round_questions || []).length) {
+              await this.fetchFinal([]);
+            } else {
+              this.currentQuestions = this.hydrateQuestions(data.next_round_questions);
+            }
+          } catch (error) {
+            alert("提交本轮问诊失败");
+          } finally {
+            this.loading = false;
+          }
+        },
+        applyDiagnosisUpdates(updates) {
+          updates.forEach((update) => {
+            const target = this.diagnosisHypothesis.find((item) => item.disease === update.disease);
+            if (target) {
+              target.confidence = update.confidence;
+              target.reasoning = update.confidence_change || target.reasoning;
+            }
+          });
+          this.diagnosisHypothesis.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+        },
+        async fetchFinal(answers) {
+          const response = await fetch(`${this.apiBase}/diagnosis/final`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: this.sessionId, answers: answers || [] }),
+          });
+          if (!response.ok) throw new Error("final failed");
+          const data = await response.json();
+          this.finalReport = {
+            diagnoses: data.diagnoses || [],
+            knowledge_graph_hits: data.knowledge_graph_hits || [],
+            diagnostic_basis: data.diagnostic_basis || [],
+            references: data.references || [],
+            evidence_paragraphs: data.evidence_paragraphs || [],
+            highlights: data.highlights || [],
+            care_plan: data.care_plan || [],
+            major_diagnosis: data.major_diagnosis || "",
+            risk_stratification: data.risk_stratification || "",
+            clinical_reasoning: data.clinical_reasoning || "",
+            disclaimer: data.disclaimer || "",
+          };
+          this.summary.risk_stratification = data.risk_stratification || this.summary.risk_stratification;
+          this.stage = "final";
+        },
+        openReference(reference, disease) {
+          this.referenceDialog = {
+            open: true,
+            title: reference.title || "参考文献",
+            source: reference.source || "未注明来源",
+            summary: reference.summary || "",
+            disease,
+            evidence_paragraphs: reference.evidence_paragraphs || [],
+            source_url: reference.source_url || "",
+          };
+        },
+        closeReference() {
+          this.referenceDialog.open = false;
+        },
+        escapeHtml(text) {
+          return String(text || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+        },
+        renderParagraph(paragraph) {
+          let text = this.escapeHtml(paragraph.text || "");
+          (paragraph.highlights || []).forEach((term) => {
+            const safeTerm = this.escapeHtml(term);
+            if (!safeTerm) return;
+            const pattern = new RegExp(safeTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+            text = text.replace(pattern, `<span class="highlight">${safeTerm}</span>`);
+          });
+          return text;
+        },
+        resetAll() {
+          this.stage = "input";
+          this.loading = false;
+          this.roundCount = 0;
+          this.maxRounds = this.health.max_follow_up_rounds || 6;
+          this.patient = { age: null, gender: "", history: "", allergies: "" };
+          this.symptoms = [{ description: "", duration_days: 0, severity: 1 }];
+          this.sessionId = "";
+          this.diagnosisHypothesis = [];
+          this.currentQuestions = [];
+          this.summary = {
+            stage_label: "",
+            symptom_analysis: "",
+            reasoning_chain: "",
+            diagnosis_summary: "",
+            risk_stratification: "",
+            emergency_warning: "",
+            required_examinations: [],
+            optional_examinations: [],
+            knowledge_graph_hits: [],
+          };
+          this.finalReport = {
+            diagnoses: [],
+            knowledge_graph_hits: [],
+            diagnostic_basis: [],
+            references: [],
+            evidence_paragraphs: [],
+            highlights: [],
+            care_plan: [],
+            major_diagnosis: "",
+            risk_stratification: "",
+            clinical_reasoning: "",
+            disclaimer: "",
+          };
+          this.closeReference();
+        },
+      },
+      mounted() {
+        this.checkHealth();
+      },
+    }).mount("#app");
+  </script>
+</body>
+</html>

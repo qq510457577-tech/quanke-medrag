@@ -1,0 +1,100 @@
+<!--pages/result/result.wxml-->
+<view class="container">
+  <!-- 头部 -->
+  <view class="result-header">
+    <text class="result-icon">📋</text>
+    <text class="result-title">诊断结果</text>
+  </view>
+
+  <!-- 诊断假设 -->
+  <view class="section-title">诊断假设（按置信度排序）</view>
+  
+  <view class="diagnosis-list">
+    <block wx:for="{{diagnosisHypothesis}}" wx:key="index">
+      <view class="diagnosis-card {{index === 0 ? 'primary' : ''}}">
+        <view class="diagnosis-header">
+          <view class="diagnosis-name">
+            <text class="rank-icon">{{index + 1}}</text>
+            {{item.disease}}
+          </view>
+          <view class="confidence {{item.confidence >= 70 ? 'high' : (item.confidence >= 40 ? 'medium' : 'low')}}">
+            {{item.confidence}}%
+          </view>
+        </view>
+        
+        <view class="diagnosis-reason" wx:if="{{item.reasoning}}">
+          <text class="reason-label">推断依据：</text>
+          <text class="reason-text">{{item.reasoning}}</text>
+        </view>
+        
+        <view class="diagnosis-category" wx:if="{{item.category}}">
+          <text class="category-tag">{{item.category}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 临床思维链 -->
+  <view class="section-title">临床思维链分析</view>
+  <view class="reasoning-box card">
+    <text class="reasoning-text">{{reasoningChain || '暂无分析'}}</text>
+  </view>
+
+  <!-- 建议检查 -->
+  <view class="section-title">建议检查</view>
+  <view class="examinations card">
+    <view class="exam-section" wx:if="{{requiredExaminations.length > 0}}">
+      <view class="exam-header">
+        <text class="exam-icon">🔴</text>
+        <text class="exam-title">必查项目</text>
+      </view>
+      <view class="exam-list">
+        <view wx:for="{{requiredExaminations}}" wx:key="index" class="exam-item">
+          {{item}}
+        </view>
+      </view>
+    </view>
+    
+    <view class="exam-section" wx:if="{{optionalExaminations.length > 0}}">
+      <view class="exam-header">
+        <text class="exam-icon">🟡</text>
+        <text class="exam-title">可选/进阶项目</text>
+      </view>
+      <view class="exam-list">
+        <view wx:for="{{optionalExaminations}}" wx:key="index" class="exam-item optional">
+          {{item}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 风险分层 -->
+  <view class="risk-section card" wx:if="{{riskStratification}}">
+    <view class="risk-header">
+      <text class="risk-icon">⚠️</text>
+      <text class="risk-title">风险分层</text>
+    </view>
+    <view class="risk-content {{riskStratification.includes('急诊') || riskStratification.includes('转诊') ? 'high' : ''}}">
+      {{riskStratification}}
+    </view>
+  </view>
+
+  <!-- 免责声明 -->
+  <view class="disclaimer card">
+    <text class="disclaimer-icon">📢</text>
+    <view class="disclaimer-content">
+      <text class="disclaimer-title">免责声明</text>
+      <text class="disclaimer-text">本诊断结果仅供参考，不替代执业医师的面诊。如有不适，请立即就医。</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button class="btn-secondary" bindtap="saveResult">
+      <text>📥 保存结果</text>
+    </button>
+    <button class="btn-primary" bindtap="startNew">
+      <text>🔄 重新诊断</text>
+    </button>
+  </view>
+</view>

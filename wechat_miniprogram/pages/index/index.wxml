@@ -1,0 +1,57 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- 顶部Logo区域 -->
+  <view class="header-section">
+    <view class="logo-box">
+      <view class="logo-icon">
+        <text class="icon">🩺</text>
+      </view>
+      <text class="app-title">AI全科医生</text>
+      <text class="app-subtitle">智能辅助诊断系统</text>
+    </view>
+  </view>
+
+  <!-- 功能介绍卡片 -->
+  <view class="card feature-card">
+    <view class="feature-item">
+      <view class="feature-icon">📋</view>
+      <view class="feature-text">
+        <text class="feature-title">循证医学</text>
+        <text class="feature-desc">基于临床路径和医学指南</text>
+      </view>
+    </view>
+    <view class="feature-item">
+      <view class="feature-icon">🤖</view>
+      <view class="feature-text">
+        <text class="feature-title">AI智能追问</text>
+        <text class="feature-desc">模拟临床思维链分析</text>
+      </view>
+    </view>
+    <view class="feature-item">
+      <view class="feature-icon">🔒</view>
+      <view class="feature-text">
+        <text class="feature-title">安全可靠</text>
+        <text class="feature-desc">仅供辅助参考，不替代面诊</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 警告提示 -->
+  <view class="warning-card">
+    <text class="warning-icon">⚠️</text>
+    <view class="warning-content">
+      <text class="warning-title">免责声明</text>
+      <text class="warning-text">本系统仅提供辅助诊断参考，不替代执业医师的面诊。如有紧急症状，请立即就医。</text>
+    </view>
+  </view>
+
+  <!-- 开始诊断按钮 -->
+  <button class="btn-primary start-btn" bindtap="startDiagnosis">
+    <text>开始智能诊断</text>
+  </button>
+
+  <!-- 历史记录入口 -->
+  <view class="history-entry" bindtap="viewHistory">
+    <text>📜 查看诊断历史</text>
+  </view>
+</view>

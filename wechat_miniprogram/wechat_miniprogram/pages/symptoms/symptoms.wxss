@@ -1,0 +1,250 @@
+/* pages/symptoms/symptoms.wxss */
+
+.page-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #1a5276;
+  margin-bottom: 10rpx;
+}
+
+.page-subtitle {
+  font-size: 28rpx;
+  color: #7f8c8d;
+  margin-bottom: 30rpx;
+}
+
+/* 症状卡片 */
+.symptoms-list {
+  margin-bottom: 30rpx;
+}
+
+.symptom-card {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #ecf0f1;
+}
+
+.card-number {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a5276;
+}
+
+.delete-btn {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee;
+  border-radius: 50%;
+}
+
+.delete-btn text {
+  color: #e74c3c;
+  font-size: 24rpx;
+}
+
+.form-item {
+  margin-bottom: 24rpx;
+}
+
+.label {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 12rpx;
+}
+
+.textarea-field {
+  width: 100%;
+  min-height: 100rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #ecf0f1;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 30rpx;
+  box-sizing: border-box;
+}
+
+.symptom-desc {
+  min-height: 80rpx !important;
+}
+
+/* 持续时间选择器 */
+.duration-picker {
+  display: flex;
+  gap: 16rpx;
+}
+
+.picker-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  border: 2rpx solid #ecf0f1;
+}
+
+.picker-btn .unit {
+  margin-left: 8rpx;
+  color: #7f8c8d;
+  font-size: 24rpx;
+}
+
+/* 严重程度选择器 */
+.severity-picker {
+  display: flex;
+  gap: 16rpx;
+}
+
+.severity-btn {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border: 4rpx solid #ecf0f1;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #bdc3c7;
+  transition: all 0.3s;
+}
+
+.severity-btn.active {
+  border-color: #1a5276;
+  background: #e8f4f8;
+  color: #1a5276;
+}
+
+.severity-label {
+  text-align: center;
+  font-size: 24rpx;
+  color: #7f8c8d;
+  margin-top: 12rpx;
+}
+
+/* 添加症状按钮 */
+.add-symptom-btn {
+  text-align: center;
+  padding: 24rpx;
+  border: 2rpx dashed #bdc3c7;
+  border-radius: 16rpx;
+  margin-bottom: 30rpx;
+}
+
+.add-symptom-btn text {
+  color: #1a5276;
+  font-size: 28rpx;
+}
+
+/* 快速添加 */
+.quick-add {
+  margin-bottom: 30rpx;
+}
+
+.quick-title {
+  font-size: 26rpx;
+  color: #7f8c8d;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.quick-tag {
+  padding: 12rpx 24rpx;
+  background: #e8f4f8;
+  color: #1a5276;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  height: 100rpx;
+  line-height: 100rpx;
+  font-size: 36rpx;
+  border-radius: 50rpx;
+}
+
+.back-btn {
+  text-align: center;
+  padding: 30rpx;
+}
+
+.back-btn text {
+  color: #7f8c8d;
+  font-size: 28rpx;
+}
+
+/* 加载动画 */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.loading-box {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 60rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading-spinner {
+  width: 80rpx;
+  height: 80rpx;
+  border: 6rpx solid #f3f3f3;
+  border-top: 6rpx solid #1a5276;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-top: 30rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.loading-subtext {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: #7f8c8d;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

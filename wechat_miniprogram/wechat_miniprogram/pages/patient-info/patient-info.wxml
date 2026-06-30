@@ -1,0 +1,78 @@
+<!--pages/patient-info/patient-info.wxml-->
+<view class="container">
+  <view class="page-title">请填写患者信息</view>
+  
+  <view class="card">
+    <!-- 年龄 -->
+    <view class="form-item">
+      <text class="label required">年龄</text>
+      <view class="input-wrapper">
+        <input 
+          type="number" 
+          class="input-field" 
+          placeholder="请输入年龄" 
+          value="{{age}}"
+          bindinput="onAgeInput"
+        />
+        <text class="unit">岁</text>
+      </view>
+    </view>
+
+    <!-- 性别 -->
+    <view class="form-item">
+      <text class="label required">性别</text>
+      <view class="gender-selector">
+        <view 
+          class="gender-btn {{gender === 'male' ? 'active' : ''}}" 
+          bindtap="selectGender" 
+          data-gender="male"
+        >
+          <text class="icon">👨</text>
+          <text>男</text>
+        </view>
+        <view 
+          class="gender-btn {{gender === 'female' ? 'active' : ''}}" 
+          bindtap="selectGender" 
+          data-gender="female"
+        >
+          <text class="icon">👩</text>
+          <text>女</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 既往病史 -->
+    <view class="form-item">
+      <text class="label">既往病史</text>
+      <textarea 
+        class="textarea-field" 
+        placeholder="如：高血压、糖尿病、冠心病等（没有则填无）" 
+        value="{{history}}"
+        bindinput="onHistoryInput"
+        maxlength="200"
+      />
+    </view>
+
+    <!-- 过敏史 -->
+    <view class="form-item">
+      <text class="label">过敏史</text>
+      <textarea 
+        class="textarea-field" 
+        placeholder="如：青霉素过敏、海鲜过敏等（没有则填无）" 
+        value="{{allergies}}"
+        bindinput="onAllergiesInput"
+        maxlength="100"
+      />
+    </view>
+  </view>
+
+  <!-- 继续按钮 -->
+  <button class="btn-primary" bindtap="goToSymptoms">
+    下一步：描述症状
+  </button>
+
+  <!-- 返回按钮 -->
+  <view class="back-btn" bindtap="goBack">
+    <text>返回上一步</text>
+  </view>
+</view>

@@ -1,0 +1,135 @@
+/* pages/index/index.wxss */
+
+.header-section {
+  padding: 60rpx 0;
+  text-align: center;
+}
+
+.logo-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-icon {
+  width: 160rpx;
+  height: 160rpx;
+  background: linear-gradient(135deg, #1a5276, #2874a6);
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30rpx;
+  box-shadow: 0 10rpx 30rpx rgba(26, 82, 118, 0.3);
+}
+
+.logo-icon .icon {
+  font-size: 80rpx;
+}
+
+.app-title {
+  font-size: 52rpx;
+  font-weight: 700;
+  color: #1a5276;
+  margin-bottom: 10rpx;
+}
+
+.app-subtitle {
+  font-size: 28rpx;
+  color: #7f8c8d;
+}
+
+/* 功能介绍卡片 */
+.feature-card {
+  padding: 40rpx;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #ecf0f1;
+}
+
+.feature-item:last-child {
+  border-bottom: none;
+}
+
+.feature-icon {
+  font-size: 48rpx;
+  margin-right: 24rpx;
+}
+
+.feature-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.feature-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 6rpx;
+}
+
+.feature-desc {
+  font-size: 24rpx;
+  color: #7f8c8d;
+}
+
+/* 警告卡片 */
+.warning-card {
+  background: #fff5f5;
+  border: 2rpx solid #fadbd8;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 40rpx;
+}
+
+.warning-icon {
+  font-size: 36rpx;
+  margin-right: 20rpx;
+}
+
+.warning-content {
+  flex: 1;
+}
+
+.warning-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #e74c3c;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.warning-text {
+  font-size: 24rpx;
+  color: #7f8c8d;
+  line-height: 1.6;
+}
+
+/* 开始按钮 */
+.start-btn {
+  width: 100%;
+  height: 100rpx;
+  line-height: 100rpx;
+  font-size: 36rpx;
+  border-radius: 50rpx;
+  margin-bottom: 30rpx;
+}
+
+/* 历史记录入口 */
+.history-entry {
+  text-align: center;
+  padding: 20rpx;
+}
+
+.history-entry text {
+  color: #3498db;
+  font-size: 28rpx;
+  text-decoration: underline;
+}
