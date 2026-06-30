@@ -389,8 +389,7 @@
                     <span class="meta-label">持续时间</span>
                     <div class="duration-picker">
                       <select v-model.number="symptom.durationYears">
-                        <option :value="0">0</option>
-                        <option v-for="y in 10" :key="y" :value="y">{{ y - 1 }}</option>
+                        <option v-for="option in durationYearOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                       </select>
                       <span class="duration-unit">年</span>
                       <select v-model.number="symptom.durationMonths">
@@ -666,6 +665,10 @@
           { value: 3, label: '中度' },
           { value: 5, label: '重度' }
         ];
+        const durationYearOptions = Array.from({ length: 10 }, (_, index) => ({
+          value: index,
+          label: String(index)
+        })).concat([{ value: 10, label: '10年以上' }]);
 
         const canSubmit = computed(() => {
           return symptoms.value.some(s => s.description.trim());
@@ -1037,7 +1040,7 @@
         
         return {
           currentStep, currentRound, maxRounds, isLoading,
-          patientInfo, symptoms, commonSymptoms, severityLevels, errors, canSubmit,
+          patientInfo, symptoms, commonSymptoms, severityLevels, durationYearOptions, errors, canSubmit,
           currentQuestions, answeredCount, isDiagnosisClear,
           diagnosisHypothesis, finalDiagnoses, clinicalReasoning,
           reasoningChain, apiStatus, apiStatusText,

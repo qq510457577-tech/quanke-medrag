@@ -1029,7 +1029,9 @@ def get_gender_text(gender: str) -> str:
 def get_duration_text(years: int, months: int, days: int = 0) -> str:
     """获取持续时间文本"""
     parts = []
-    if years > 0:
+    if years >= 10:
+        parts.append("10年以上")
+    elif years > 0:
         parts.append(f"{years}年")
     if months > 0:
         parts.append(f"{months}个月")
