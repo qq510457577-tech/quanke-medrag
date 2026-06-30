@@ -7,7 +7,9 @@
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a5276 0%, #2874a6 50%, #1a5276 100%); min-height: 100vh; color: #333; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a5276 0%, #2874a6 50%, #1a5276 100%); min-height: 100vh; color: #333; overflow-x: hidden; }
+    button, input, select, textarea { font: inherit; }
     .app-container { min-height: 100vh; display: flex; flex-direction: column; }
     .app-header { background: rgba(255,255,255,0.95); padding: 16px 20px; box-shadow: 0 2px 20px rgba(0,0,0,0.15); }
     .header-content { max-width: 900px; margin: 0 auto; }
@@ -195,6 +197,86 @@
     .progress-text { font-size: 13px; color: #1a5276; margin-bottom: 8px; text-align: center; font-weight: 500; }
     .progress-track { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
     .progress-fill { height: 100%; background: linear-gradient(90deg, #1a5276, #2874a6); border-radius: 3px; transition: width 0.5s ease-out; }
+
+    @media (max-width: 640px) {
+      .app-header { padding: 12px 14px; }
+      .logo { justify-content: flex-start; gap: 8px; margin-bottom: 4px; }
+      .logo-icon { width: 30px; height: 30px; flex: 0 0 auto; }
+      .logo-text { font-size: 18px; line-height: 1.25; }
+      .header-subtitle { text-align: left; font-size: 12px; line-height: 1.45; }
+
+      .main-content { padding: 14px 10px 24px; }
+      .steps-container { margin-bottom: 14px; }
+      .steps-track { padding: 0 8px; margin-bottom: 10px; }
+      .step-node { width: 28px; height: 28px; font-size: 12px; }
+      .step-item.active .step-node { transform: none; }
+      .step-connector { width: auto; flex: 1; min-width: 28px; max-width: 72px; }
+      .step-labels { justify-content: space-between; gap: 0; }
+      .step-label { width: 33.333%; text-align: center; font-size: 11px; line-height: 1.3; }
+
+      .round-progress { border-radius: 8px; padding: 10px 12px; gap: 8px; }
+      .round-bar { max-width: none; min-width: 80px; }
+      .round-text { font-size: 12px; white-space: nowrap; }
+      .api-status { padding: 8px 10px; align-items: flex-start; line-height: 1.4; text-align: left; }
+      .api-dot { margin-top: 4px; flex: 0 0 auto; }
+
+      .card { border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.12); }
+      .card-title { font-size: 16px; margin-bottom: 16px; }
+      .form-section { margin-bottom: 16px; }
+      .section-title { align-items: flex-start; line-height: 1.4; }
+      .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .form-group { min-width: 0; margin-bottom: 0; }
+      .form-input, .form-select, .symptom-textarea { font-size: 16px; border-radius: 8px; }
+
+      .symptom-list { gap: 10px; }
+      .symptom-item { border-radius: 8px; padding: 12px; }
+      .symptom-meta { display: grid; grid-template-columns: 1fr; gap: 12px; }
+      .meta-group { min-width: 0; }
+      .duration-picker { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+      .duration-picker select { min-width: 0; width: 100%; font-size: 13px; }
+      .severity-picker { justify-content: space-between; gap: 6px; }
+      .severity-btn { width: 40px; height: 40px; }
+      .btn-remove { top: 6px; right: 6px; min-width: 36px; min-height: 36px; }
+      .btn-add { width: 100%; justify-content: center; min-height: 42px; }
+      .quick-symptoms { gap: 8px; }
+      .quick-btn { flex: 1 1 calc(50% - 8px); min-height: 36px; padding: 8px 10px; border-radius: 8px; line-height: 1.3; }
+
+      .btn-primary, .btn-secondary { min-height: 46px; border-radius: 8px; font-size: 15px; }
+      .button-group { flex-direction: column; gap: 8px; }
+
+      .hypothesis-card { border-radius: 8px; padding: 12px; }
+      .hypothesis-header { align-items: flex-start; gap: 8px; }
+      .hypothesis-name { line-height: 1.4; overflow-wrap: anywhere; }
+      .hypothesis-conf { flex: 0 0 auto; }
+      .reasoning-box { border-radius: 8px; padding: 12px; }
+      .reasoning-content { font-size: 12px; overflow-wrap: anywhere; }
+
+      .questions-list { gap: 12px; }
+      .question-card { border-radius: 8px; padding: 12px; }
+      .question-header { flex-direction: column; gap: 8px; }
+      .question-text { width: 100%; line-height: 1.5; overflow-wrap: anywhere; }
+      .answer-options { display: grid; grid-template-columns: 1fr; gap: 8px; }
+      .option-btn { width: 100%; min-height: 42px; border-radius: 8px; padding: 10px 12px; line-height: 1.35; text-align: left; }
+      .yesno-btns { gap: 8px; }
+      .yesno-btn { min-height: 44px; }
+
+      .diagnosis-card { border-radius: 8px; padding: 14px; }
+      .diagnosis-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .diagnosis-name { font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+      .diagnosis-confidence { font-size: 20px; }
+      .diagnosis-reason, .ref-content { overflow-wrap: anywhere; }
+      .ref-header { align-items: flex-start; gap: 8px; }
+      .ref-title { line-height: 1.4; overflow-wrap: anywhere; }
+      .suggestion-tag { border-radius: 8px; line-height: 1.35; }
+      .loading-progress-bar { padding: 10px; }
+    }
+
+    @media (max-width: 380px) {
+      .form-row { grid-template-columns: 1fr; }
+      .quick-btn { flex-basis: 100%; }
+      .severity-btn { width: 36px; height: 36px; }
+      .logo-text { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
