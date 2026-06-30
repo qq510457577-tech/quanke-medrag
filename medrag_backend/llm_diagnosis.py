@@ -9,6 +9,7 @@ import json
 import asyncio
 import uuid
 import re
+import time
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from pydantic import BaseModel
@@ -53,6 +54,7 @@ DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 DEEPSEEK_TIMEOUT_SECONDS = float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "90"))
 DEEPSEEK_MAX_RETRIES = int(os.getenv("DEEPSEEK_MAX_RETRIES", "2"))
 LLM_DEBUG = os.getenv("LLM_DEBUG", "false").lower() == "true"
+FAST_INITIAL_RESPONSE = os.getenv("FAST_INITIAL_RESPONSE", "true").lower() == "true"
 SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", str(60 * 60 * 2)))
 PLACEHOLDER_API_KEYS = {"", "your-deepseek-api-key-here", "your_deepseek_api_key_here"}
 
@@ -715,6 +717,101 @@ def merge_guardrail_questions(state: Dict[str, Any], llm_questions: List[Dict[st
     return merged[:4]
 
 
+def ensure_minimum_questions(questions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    supplements = [
+        {
+            "question_id": "rule_fast_pattern",
+            "question": "症状目前呈现怎样的变化趋势？（单选）",
+            "input_type": "single",
+            "options": ["逐渐加重", "基本稳定", "间断反复", "已有明显缓解"],
+            "target_disease": "病程判断",
+            "purpose": "判断病情进展速度和风险层级",
+            "question_group": "core_fact",
+        },
+        {
+            "question_id": "rule_fast_systemic",
+            "question": "是否伴随以下全身情况？（复选）",
+            "input_type": "multiple",
+            "options": ["发热或寒战", "明显乏力", "体重下降", "夜间出汗", "均无"],
+            "target_disease": "系统性疾病筛查",
+            "purpose": "补充感染、肿瘤、内分泌或免疫性疾病线索",
+            "question_group": "core_fact",
+        },
+        {
+            "question_id": "rule_fast_red_flag",
+            "question": "是否出现以下需要优先就医的情况？（复选）",
+            "input_type": "multiple",
+            "options": ["胸痛或胸闷明显", "呼吸困难", "意识异常或晕厥", "剧烈疼痛", "均无"],
+            "target_disease": "红旗征筛查",
+            "purpose": "排查需要急诊处理的危险信号",
+            "question_group": "red_flag",
+        },
+    ]
+    merged = list(questions or [])
+    seen = {_question_key(q) for q in merged}
+    for question in supplements:
+        key = _question_key(question)
+        if key not in seen:
+            merged.append(question)
+            seen.add(key)
+        if len(merged) >= 3:
+            break
+    return merged[:4]
+
+
+def build_fast_initial_diagnosis(
+    state: Dict[str, Any],
+    patient: PatientInfo,
+    symptoms: List[Symptom],
+) -> Dict[str, Any]:
+    rule_scores = rule_based_diagnosis_scores(state, patient, symptoms)
+    symptom_text = "；".join(
+        "{}（{}，{}级）".format(
+            s.description,
+            get_duration_text(s.duration_years, s.duration_months, s.duration_days or 0),
+            s.severity or 1,
+        )
+        for s in symptoms
+    )
+    diagnoses = []
+    for score in rule_scores[:5]:
+        diagnoses.append({
+            "disease": score["disease"],
+            "confidence": score["evidence_score"],
+            "evidence_score": score["evidence_score"],
+            "reasoning": "规则层提示：{}".format("；".join(score["evidence"])),
+            "category": score["role"],
+            "related_symptoms": [s.description for s in symptoms],
+            "evidence_source": "结构化规则评分",
+        })
+
+    if not diagnoses:
+        diagnoses = [{
+            "disease": "未分化全科症状待鉴别",
+            "confidence": 35,
+            "evidence_score": 35,
+            "reasoning": "当前信息不足，需先补齐起病时间、严重程度、伴随症状、诱因、既往病史和红旗征。",
+            "category": "differential_diagnosis",
+            "related_symptoms": [s.description for s in symptoms],
+            "evidence_source": "全科未分化症状分诊规则",
+        }]
+
+    diagnosis_data = {
+        "symptom_analysis": "已完成快速分诊：{}".format(symptom_text or "未填写明确症状"),
+        "is_emergency": False,
+        "risk_stratification": "待评估",
+        "differential_diagnoses": diagnoses,
+        "required_examinations": [],
+        "optional_examinations": [],
+        "first_round_questions": ensure_minimum_questions(merge_guardrail_questions(state, [])),
+        "reasoning_chain": "快速首轮采用红旗征筛查、核心事实补齐和规则评分生成；后续追问和最终报告继续结合大模型细化鉴别诊断。",
+        "rule_based_scores": rule_scores,
+        "llm_deferred": True,
+        "disclaimer": "本诊断仅供参考，请咨询执业医师",
+    }
+    return apply_initial_guardrails(diagnosis_data, state, patient, symptoms)
+
+
 def apply_initial_guardrails(
     diagnosis_data: Dict[str, Any],
     state: Dict[str, Any],
@@ -958,6 +1055,7 @@ async def call_deepseek(prompt: str, system_prompt: str = None, max_tokens: int 
     last_error = None
     for attempt in range(DEEPSEEK_MAX_RETRIES + 1):
         client = get_http_client()
+        started_at = time.perf_counter()
         try:
             response = await client.post(
                 DEEPSEEK_BASE_URL + "/v1/chat/completions",
@@ -966,6 +1064,13 @@ async def call_deepseek(prompt: str, system_prompt: str = None, max_tokens: int 
             )
             response.raise_for_status()
             data = response.json()
+            elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+            print("deepseek_ms={} attempt={} model={} max_tokens={}".format(
+                elapsed_ms,
+                attempt + 1,
+                DEEPSEEK_MODEL,
+                max_tokens,
+            ))
             return data["choices"][0]["message"]["content"]
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
@@ -1039,6 +1144,9 @@ async def generate_initial_diagnosis(request: DiagnosisRequest) -> Dict:
         }
     
     # 构建患者信息
+    if FAST_INITIAL_RESPONSE:
+        return build_fast_initial_diagnosis(clinical_state, request.patient, request.symptoms)
+
     gender_text = get_gender_text(request.patient.gender)
     age = request.patient.age or '未填写'
     
@@ -1682,6 +1790,7 @@ async def root():
 @app.post("/api/diagnosis/start")
 async def start_diagnosis(request: DiagnosisRequest):
     """开始诊断流程"""
+    started_at = time.perf_counter()
     cleanup_expired_sessions()
     
     # 创建新会话
@@ -1706,7 +1815,7 @@ async def start_diagnosis(request: DiagnosisRequest):
         session.clinical_state = diagnosis_data.get('assessment_state', {})
         
         # 合并返回数据
-        return {
+        response_data = {
             "session_id": session_id,
             "symptom_analysis": diagnosis_data.get('symptom_analysis', ''),
             "is_emergency": diagnosis_data.get('is_emergency', is_emergency),
@@ -1725,6 +1834,13 @@ async def start_diagnosis(request: DiagnosisRequest):
             "is_diagnosis_clear": False,
             "disclaimer": diagnosis_data.get('disclaimer', '本诊断仅供参考，请咨询执业医师')
         }
+        elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+        print("diagnosis_start_ms={} fast_initial={} symptom_count={}".format(
+            elapsed_ms,
+            bool(diagnosis_data.get("llm_deferred")),
+            len(request.symptoms),
+        ))
+        return response_data
         
     except HTTPException:
         raise

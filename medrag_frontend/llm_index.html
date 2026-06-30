@@ -542,6 +542,22 @@
         const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
         const basePath = window.location.pathname.startsWith('/medrag') ? '/medrag' : '';
         const API_BASE = isProduction ? `${basePath}/api` : 'http://127.0.0.1:8000/api';
+        const REQUEST_TIMEOUT_MS = 120000;
+
+        async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          try {
+            return await fetch(url, { ...options, signal: controller.signal });
+          } catch (error) {
+            if (error.name === 'AbortError') {
+              throw new Error('请求超时，请稍后重试');
+            }
+            throw error;
+          } finally {
+            clearTimeout(timer);
+          }
+        }
         
         const currentStep = ref(1);
         const currentRound = ref(1);
@@ -617,7 +633,7 @@
         async function checkApi() {
           const apiBase = isProduction ? basePath : 'http://127.0.0.1:8000';
           try {
-            const response = await fetch(`${apiBase}/`);
+            const response = await fetchWithTimeout(`${apiBase}/`, {}, 10000);
             if (response.ok) {
               apiStatus.value = 'ready';
               console.log('后端服务连接成功');
@@ -732,7 +748,7 @@
           startLoadingAnimation();
           
           try {
-            const response = await fetch(`${API_BASE}/diagnosis/start`, {
+            const response = await fetchWithTimeout(`${API_BASE}/diagnosis/start`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -798,7 +814,7 @@
           startLoadingAnimation();
           
           try {
-            const response = await fetch(`${API_BASE}/diagnosis/follow-up`, {
+            const response = await fetchWithTimeout(`${API_BASE}/diagnosis/follow-up`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -877,7 +893,7 @@
               answer_type: q.input_type
             })).filter(a => a.answer !== null && a.answer !== undefined && (Array.isArray(a.answer) ? a.answer.length > 0 : true));
             
-            const response = await fetch(`${API_BASE}/diagnosis/final`, {
+            const response = await fetchWithTimeout(`${API_BASE}/diagnosis/final`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
