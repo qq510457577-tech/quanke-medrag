@@ -540,7 +540,8 @@
         // 开发环境：使用127.0.0.1:8000（避免DNS解析延迟）
         // 生产环境：使用相对路径/api（通过nginx反向代理）
         const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-        const API_BASE = isProduction ? '/api' : 'http://127.0.0.1:8000/api';
+        const basePath = window.location.pathname.startsWith('/medrag') ? '/medrag' : '';
+        const API_BASE = isProduction ? `${basePath}/api` : 'http://127.0.0.1:8000/api';
         
         const currentStep = ref(1);
         const currentRound = ref(1);
@@ -614,7 +615,7 @@
         
         // 检查API连接（自动检测环境）
         async function checkApi() {
-          const apiBase = isProduction ? '' : 'http://127.0.0.1:8000';
+          const apiBase = isProduction ? basePath : 'http://127.0.0.1:8000';
           try {
             const response = await fetch(`${apiBase}/`);
             if (response.ok) {
