@@ -196,6 +196,8 @@
     .progress-text { font-size: 13px; color: #1a5276; margin-bottom: 8px; text-align: center; font-weight: 500; }
     .progress-track { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
     .progress-fill { height: 100%; background: linear-gradient(90deg, #1a5276, #2874a6); border-radius: 3px; transition: width 0.5s ease-out; }
+    .app-footer { max-width: 900px; width: 100%; margin: 0 auto; padding: 0 16px 22px; }
+    .footer-disclaimer { color: rgba(255,255,255,0.82); font-size: 12px; line-height: 1.7; text-align: center; }
 
     @media (max-width: 640px) {
       .app-header { padding: 12px 14px; }
@@ -204,6 +206,8 @@
       .header-subtitle { text-align: center; font-size: 12px; line-height: 1.45; }
 
       .main-content { padding: 14px 10px 24px; }
+      .app-footer { padding: 0 14px 18px; }
+      .footer-disclaimer { font-size: 11px; line-height: 1.6; }
       .steps-container { margin-bottom: 14px; }
       .steps-track { padding: 0 8px; margin-bottom: 10px; }
       .step-node { width: 28px; height: 28px; font-size: 12px; }
@@ -605,6 +609,9 @@
           </div>
         </div>
       </main>
+      <footer class="app-footer">
+        <p class="footer-disclaimer">本次辅助诊断仅用于参考，不能替代执业医师面诊、检查和临床判断；具体诊疗方案请结合患者实际临床情况、体格检查、辅助检查结果及医生意见确定。如出现胸痛、呼吸困难、意识异常、严重出血、持续高热等急危重症表现，请立即就医或拨打急救电话。</p>
+      </footer>
     </div>
   </div>
 
