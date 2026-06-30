@@ -78,17 +78,13 @@
     
     /* 严重程度选择器 */
     .severity-picker { display: flex; gap: 8px; }
-    .severity-btn { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #ddd; background: #fff; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+    .severity-btn { min-width: 72px; height: 36px; padding: 0 14px; border-radius: 18px; border: 2px solid #ddd; background: #fff; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; white-space: nowrap; }
     .severity-btn:hover { transform: scale(1.1); }
     .severity-btn.active { border-color: #fff; color: #fff; transform: scale(1.15); }
     .severity-btn[data-level="1"] { background: #d5f5e3; border-color: #d5f5e3; }
     .severity-btn[data-level="1"].active { background: #27ae60; }
-    .severity-btn[data-level="2"] { background: #abebc6; border-color: #abebc6; }
-    .severity-btn[data-level="2"].active { background: #2ecc71; }
     .severity-btn[data-level="3"] { background: #f9e79f; border-color: #f9e79f; }
     .severity-btn[data-level="3"].active { background: #f1c40f; }
-    .severity-btn[data-level="4"] { background: #f5b041; border-color: #f5b041; }
-    .severity-btn[data-level="4"].active { background: #e67e22; }
     .severity-btn[data-level="5"] { background: #ec7063; border-color: #ec7063; }
     .severity-btn[data-level="5"].active { background: #e74c3c; }
     
@@ -237,7 +233,7 @@
       .duration-picker { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 6px; align-items: center; }
       .duration-picker select { min-width: 0; width: 100%; font-size: 13px; }
       .severity-picker { justify-content: space-between; gap: 6px; }
-      .severity-btn { width: 40px; height: 40px; }
+      .severity-btn { flex: 1; min-width: 0; width: auto; height: 40px; padding: 0 8px; }
       .btn-remove { top: 6px; right: 6px; min-width: 36px; min-height: 36px; }
       .btn-add { width: 100%; justify-content: center; min-height: 42px; }
       .quick-symptoms { gap: 8px; }
@@ -276,7 +272,7 @@
     @media (max-width: 380px) {
       .form-row { grid-template-columns: 1fr; }
       .quick-btn { flex-basis: 100%; }
-      .severity-btn { width: 36px; height: 36px; }
+      .severity-btn { width: auto; height: 38px; }
       .logo-text { font-size: 16px; }
     }
   </style>
@@ -411,8 +407,8 @@
                   <div class="meta-group">
                     <span class="meta-label">严重程度（点击选择）</span>
                     <div class="severity-picker">
-                      <button v-for="level in 5" :key="level" class="severity-btn" :class="{ active: symptom.severity === level }" :data-level="level" @click="symptom.severity = level" :title="'严重程度' + level + '级'">
-                        {{ level }}
+                      <button v-for="level in severityLevels" :key="level.value" class="severity-btn" :class="{ active: symptom.severity === level.value }" :data-level="level.value" @click="symptom.severity = level.value" :title="'严重程度：' + level.label">
+                        {{ level.label }}
                       </button>
                     </div>
                   </div>
@@ -519,7 +515,7 @@
                 </div>
                 
                 <div v-else-if="q.input_type === 'severity'" class="severity-picker" style="margin-top: 8px;">
-                  <button v-for="level in 5" :key="level" class="severity-btn" :class="{ active: q.answer === level }" :data-level="level" @click="selectSeverity(q, level)">{{ level }}</button>
+                  <button v-for="level in severityLevels" :key="level.value" class="severity-btn" :class="{ active: q.answer === level.value }" :data-level="level.value" @click="selectSeverity(q, level.value)">{{ level.label }}</button>
                 </div>
                 
                 <div v-else>
@@ -665,6 +661,12 @@
         
         const commonSymptoms = ['头晕', '头痛', '胸痛', '腹痛', '腰痛', '咳嗽', '发热', '乏力', '恶心', '心悸', '气短', '腹泻', '失眠'];
         
+        const severityLevels = [
+          { value: 1, label: '轻度' },
+          { value: 3, label: '中度' },
+          { value: 5, label: '重度' }
+        ];
+
         const canSubmit = computed(() => {
           return symptoms.value.some(s => s.description.trim());
         });
@@ -1035,7 +1037,7 @@
         
         return {
           currentStep, currentRound, maxRounds, isLoading,
-          patientInfo, symptoms, commonSymptoms, errors, canSubmit,
+          patientInfo, symptoms, commonSymptoms, severityLevels, errors, canSubmit,
           currentQuestions, answeredCount, isDiagnosisClear,
           diagnosisHypothesis, finalDiagnoses, clinicalReasoning,
           reasoningChain, apiStatus, apiStatusText,
