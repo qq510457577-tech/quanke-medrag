@@ -200,10 +200,9 @@
 
     @media (max-width: 640px) {
       .app-header { padding: 12px 14px; }
-      .logo { justify-content: flex-start; gap: 8px; margin-bottom: 4px; }
-      .logo-icon { width: 30px; height: 30px; flex: 0 0 auto; }
+      .logo { justify-content: center; gap: 0; margin-bottom: 4px; text-align: center; }
       .logo-text { font-size: 18px; line-height: 1.25; }
-      .header-subtitle { text-align: left; font-size: 12px; line-height: 1.45; }
+      .header-subtitle { text-align: center; font-size: 12px; line-height: 1.45; }
 
       .main-content { padding: 14px 10px 24px; }
       .steps-container { margin-bottom: 14px; }
@@ -286,9 +285,6 @@
       <header class="app-header">
         <div class="header-content">
           <div class="logo">
-            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
             <span class="logo-text">全科医生辅助诊断系统</span>
           </div>
           <div class="header-subtitle">基于DeepSeek LLM 临床思维链 | 智能辅助诊断</div>
