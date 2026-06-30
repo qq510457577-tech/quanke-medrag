@@ -392,15 +392,6 @@
   <div id="app" class="page">
     <section class="hero">
       <h1>全科医生辅助诊断系统</h1>
-      <p>遵循“主诉拆解 -> 阳性/阴性症状追问 -> 红旗征排查 -> 体征与检查补充 -> 诊断收敛”的分层临床思维链。问诊阶段只呈现当前轮问题，诊断权重与推理过程在内部动态更新，最终完成追问后集中展示。</p>
-      <div class="hero-row">
-        <span class="chip">
-          <span class="dot" :class="health.ok ? 'ok' : (health.checked ? 'error' : '')"></span>
-          {{ healthText }}
-        </span>
-        <span class="chip">最多追问 {{ maxRounds }} 轮</span>
-        <span class="chip">前端不暴露模型密钥</span>
-      </div>
     </section>
 
     <section class="panel" v-if="stage === 'input'">
@@ -465,7 +456,7 @@
       <div class="actions">
         <button class="secondary" type="button" @click="addSymptom">新增症状</button>
         <button class="primary" type="button" @click="startDiagnosis" :disabled="loading">
-          {{ loading ? "处理中..." : "开始分层追问" }}
+          {{ loading ? "处理中..." : "开始" }}
         </button>
       </div>
     </section>
@@ -828,7 +819,7 @@
               this.stage = "followup";
             }
           } catch (error) {
-            alert("启动辅助问诊失败，请确认本地后端已启动。");
+            alert("启动辅助问诊失败，请确认后端服务已启动。");
           } finally {
             this.loading = false;
           }
