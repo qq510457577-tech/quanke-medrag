@@ -53,6 +53,9 @@ DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").r
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 DEEPSEEK_TIMEOUT_SECONDS = float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "90"))
 DEEPSEEK_MAX_RETRIES = int(os.getenv("DEEPSEEK_MAX_RETRIES", "2"))
+FOLLOW_UP_MAX_TOKENS = int(os.getenv("FOLLOW_UP_MAX_TOKENS", "900"))
+FINAL_REPORT_MAX_TOKENS = int(os.getenv("FINAL_REPORT_MAX_TOKENS", "1200"))
+PROMPT_HISTORY_MAX_ITEMS = int(os.getenv("PROMPT_HISTORY_MAX_ITEMS", "18"))
 LLM_DEBUG = os.getenv("LLM_DEBUG", "false").lower() == "true"
 FAST_INITIAL_RESPONSE = os.getenv("FAST_INITIAL_RESPONSE", "true").lower() == "true"
 SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", str(60 * 60 * 2)))
@@ -396,6 +399,20 @@ def _stringify_answer(answer: Any) -> str:
     if isinstance(answer, list):
         return "、".join(str(item) for item in answer)
     return str(answer or "")
+
+
+def format_answer_history(answers: List[Dict[str, Any]], max_items: int = PROMPT_HISTORY_MAX_ITEMS) -> str:
+    """保留最近且足够的问诊证据，避免多轮上下文无限增长。"""
+    if not answers:
+        return "暂无"
+    recent_answers = answers[-max_items:]
+    return "\n".join(
+        "- {} → {}".format(
+            _clip_text(item.get("question", ""), 80),
+            _clip_text(_stringify_answer(item.get("answer")), 100),
+        )
+        for item in recent_answers
+    )
 
 
 def _contains_negative_context(text: str, keyword: str) -> bool:
@@ -1171,7 +1188,7 @@ async def call_deepseek(prompt: str, system_prompt: str = None, max_tokens: int 
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.5,
+        "temperature": 0.3,
         "max_tokens": max_tokens
     }
     
@@ -1573,10 +1590,7 @@ async def generate_follow_up_questions(
         })
     
     # 构建上下文
-    answers_summary = "\n".join([
-        "- {} → {}".format(a['question'], a['answer']) 
-        for a in session.all_answers
-    ])
+    answers_summary = format_answer_history(session.all_answers)
     
     # 当前诊断假设
     hypothesis_summary = "\n".join([
@@ -1598,12 +1612,11 @@ async def generate_follow_up_questions(
 2. 不能孤立地看待每个症状，必须分析症状间的因果关系
 3. 对于老年患者(>65岁)，必须考虑：不典型临床表现、多病共存、用药复杂性
 
-二、问题设计原则（每轮3-4个）
+二、问题设计原则（每轮恰好3个）
 1. 第一问：针对上一轮回答中诊断支持度最高的诊断
 2. 第二问：针对需要排除的危险疾病（红旗征）
 3. 第三问：针对症状间的关联性
-4. 第四问：针对鉴别诊断的特异性症状
-5. 问题必须有逻辑递进关系，不能跳跃
+4. 问题必须有逻辑递进关系，不能跳跃
 
 三、诊断支持度收敛规则（核心，不代表患病概率）
 1. 每次调整必须有明确证据，变化幅度5-20%
@@ -1626,16 +1639,8 @@ async def generate_follow_up_questions(
 - 用药复杂：注意药物副作用和相互作用
 - 机能下降：注意跌倒、失能风险
 
-六、体征数据收集（关键）
-在追问过程中，优先收集以下客观指标以提高诊断准确性：
-1. 体温：是否发热（>37.3℃）
-2. 心率：正常/过快（>100次/分）/过慢（<60次/分）
-3. 血压：正常/升高/降低
-4. 呼吸频率：正常/急促
-5. 指尖血氧：正常（>95%）/偏低
-6. 近期检查结果：血常规、尿常规、心电图、B超等
-
-【重要】每轮问题中至少包含1-2个体征数据收集问题！
+六、客观数据收集
+仅在对当前鉴别诊断有直接区分价值时提问体温、血压、血氧、心率或既往检查结果；不要每轮重复收集。
 """
     
     # 问题类型强制要求 - 避免文字输入
@@ -1667,14 +1672,12 @@ async def generate_follow_up_questions(
       "purpose": "问题目的"
     }}
   ],
-  "required_examinations": [{{"name": "项目", "purpose": "目的"}}],
-  "optional_examinations": [{{"name": "项目", "purpose": "目的"}}],
   "reasoning_chain": "循证医学临床思维链的更新推理"
 }}
 ```
 
 【强制要求】
-- next_round_questions必须恰好包含3个或4个问题
+- next_round_questions必须恰好包含3个问题
 - 每个问题必须包含question_id、question、input_type、target_disease字段
 - input_type必须为yesno/single/multiple/text之一
 - single和multiple类型必须提供options数组'''
@@ -1700,7 +1703,7 @@ async def generate_follow_up_questions(
 1. 所有问题必须使用选择题形式，禁止文字输入！
 2. input_type只能是：yesno（是否）、single（单选）、multiple（复选）
 3. 如果需要了解具体数值或描述，请转换为选项形式
-4. 每轮必须生成恰好3-4个问题
+4. 每轮必须生成恰好3个问题；若没有高信息量问题，应结束追问
 
 例如：
 - 不要问："您的心悸持续多久？"
@@ -1710,7 +1713,7 @@ async def generate_follow_up_questions(
 
 1. 根据最新一轮回答，分析对各诊断支持度的影响，说明循证依据
 2. 判断当前诊断是否已经足够明确
-3. 如果需要继续追问，设计下一轮问题（3-4个选择题，必须是3-4个）
+3. 如果需要继续追问，设计下一轮问题（恰好3个选择题）
 
 {json_template}
 
@@ -1718,7 +1721,11 @@ async def generate_follow_up_questions(
 '''
 
     try:
-        result = await call_deepseek(prompt, system_prompt=follow_up_system_prompt, max_tokens=1800)
+        result = await call_deepseek(
+            prompt,
+            system_prompt=follow_up_system_prompt,
+            max_tokens=FOLLOW_UP_MAX_TOKENS,
+        )
         
         if LLM_DEBUG:
             print(f"[DEBUG] LLM原始返回长度: {len(result)}")
@@ -1759,10 +1766,7 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
     """生成最终诊断报告"""
     
     # 构建完整的诊断上下文
-    answers_detail = "\n".join([
-        "第{}轮 - {} → {}".format(a['round'], a['question'], a['answer'])
-        for a in session.all_answers
-    ])
+    answers_detail = format_answer_history(session.all_answers)
     
     # 构建患者信息
     gender_text = get_gender_text(session.patient_info.gender)
@@ -1774,9 +1778,8 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
 【最终诊断报告要求】
 1. 主要诊断：诊断支持度≥50的诊断，按支持度排序，最多3个；支持度不代表患病概率
 2. 共病诊断/次要诊断：诊断支持度30-50的诊断
-3. 每个诊断需给出详细推理过程和循证依据
-4. 诊断依据需具体、可查证到具体文献
-5. 参考文献需包含具体指南名称、章节、发表年份
+3. 每个诊断只保留关键推理和最多2条证据
+4. 仅列出已知的指南或教材名称，不生成无法核验的具体文献段落
 6. 区分「必查项目」和「可选/进阶项目」
 7. 明确风险分层和就医建议
 """
@@ -1891,7 +1894,11 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
 """
 
     try:
-        result = await call_deepseek(prompt, system_prompt=final_system_prompt, max_tokens=2200)
+        result = await call_deepseek(
+            prompt,
+            system_prompt=final_system_prompt,
+            max_tokens=FINAL_REPORT_MAX_TOKENS,
+        )
         
         return compact_llm_output(normalize_final_report(compact_llm_output(parse_llm_json_object(result)), session))
     except HTTPException:

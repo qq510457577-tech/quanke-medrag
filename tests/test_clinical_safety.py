@@ -4,7 +4,12 @@ import unittest
 
 sys.path.insert(0, "medrag_backend")
 
-from llm_diagnosis import Symptom, format_symptoms_for_prompt, screen_red_flags
+from llm_diagnosis import (
+    Symptom,
+    format_answer_history,
+    format_symptoms_for_prompt,
+    screen_red_flags,
+)
 
 
 class ClinicalSafetyTests(unittest.TestCase):
@@ -31,6 +36,15 @@ class ClinicalSafetyTests(unittest.TestCase):
         self.assertIn("双下肢水肿", context)
         self.assertIn("2天", context)
         self.assertIn("1个月", context)
+
+    def test_answer_history_is_bounded_and_keeps_most_recent_evidence(self):
+        history = format_answer_history([
+            {"question": "早期问题", "answer": "早期回答"},
+            {"question": "关键问题", "answer": "关键回答"},
+        ], max_items=1)
+        self.assertNotIn("早期问题", history)
+        self.assertIn("关键问题", history)
+        self.assertIn("关键回答", history)
 
 
 if __name__ == "__main__":
