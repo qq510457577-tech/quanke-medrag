@@ -117,6 +117,7 @@
     .hypothesis-conf.high { color: #e74c3c; }
     .hypothesis-conf.medium { color: #f39c12; }
     .hypothesis-conf.low { color: #3498db; }
+    .support-score-note { margin: 0 0 12px; color: #667085; font-size: 12px; line-height: 1.5; }
     .hypothesis-reason { font-size: 12px; color: #666; margin-top: 6px; }
     .hypothesis-category { font-size: 10px; color: #999; background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
     
@@ -465,11 +466,12 @@
               </svg>
               当前诊断假设
             </div>
+            <p class="support-score-note">诊断支持度用于排序和追问，不代表患病概率或确诊结论。</p>
             <div class="hypothesis-list">
               <div v-for="(hyp, idx) in diagnosisHypothesis" :key="idx" class="hypothesis-card" :class="getHypothesisClass(hyp.confidence)">
                 <div class="hypothesis-header">
                   <span class="hypothesis-name">{{ hyp.disease }}</span>
-                  <span class="hypothesis-conf" :class="getConfClass(hyp.confidence)">{{ hyp.confidence }}%</span>
+                  <span class="hypothesis-conf" :class="getConfClass(hyp.confidence)">支持度 {{ hyp.confidence }}/100</span>
                 </div>
                 <div class="hypothesis-reason">{{ hyp.reasoning }}</div>
                 <span class="hypothesis-category">{{ hyp.category }}</span>
@@ -559,10 +561,11 @@
           
           <!-- 诊断结果 -->
           <div class="final-diagnosis">
+            <p class="support-score-note">诊断支持度用于排序和追问，不代表患病概率或确诊结论。</p>
             <div v-for="(diag, idx) in finalDiagnoses" :key="idx" class="diagnosis-card" :class="diag.diagnosis_type === '主要诊断' ? 'main' : 'secondary'">
               <div class="diagnosis-header">
                 <span class="diagnosis-name">{{ diag.disease }}</span>
-                <span class="diagnosis-confidence" :class="getConfClass(diag.confidence)">{{ diag.confidence }}%</span>
+                <span class="diagnosis-confidence" :class="getConfClass(diag.confidence)">支持度 {{ diag.confidence }}/100</span>
               </div>
               <span class="diagnosis-type">{{ diag.diagnosis_type }}</span>
               

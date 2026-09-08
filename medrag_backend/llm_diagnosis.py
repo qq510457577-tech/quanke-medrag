@@ -411,6 +411,40 @@ def _contains_negative_context(text: str, keyword: str) -> bool:
     return any(word in clause[:8] for word in NEGATIVE_WORDS)
 
 
+def _is_negative_answer(answer: Any) -> bool:
+    """判断结构化问诊答案是否明确否认症状。"""
+    text = _stringify_answer(answer).strip().lower()
+    if not text:
+        return False
+    negative_answers = {
+        "否", "没有", "无", "无以下情况", "无明显", "未出现", "不伴", "否认",
+        "no", "none", "negative",
+    }
+    return text in negative_answers or any(phrase in text for phrase in [
+        "没有出现", "未出现", "无胸痛", "无呼吸困难", "否认",
+    ])
+
+
+def _is_affirmative_answer(answer: Any) -> bool:
+    """判断答案是否明确肯定题干所问的症状。"""
+    text = _stringify_answer(answer).strip().lower()
+    if not text or _is_negative_answer(answer):
+        return False
+    return text in {"是", "有", "出现", "存在", "伴有", "yes", "positive"}
+
+
+def _find_red_flag_matches(text: str) -> List[Dict[str, str]]:
+    """从患者自由文本中匹配红旗征，保留局部否定语义。"""
+    lowered = text.lower()
+    matched = []
+    for category, keywords in RED_FLAG_PATTERNS.items():
+        for keyword in keywords:
+            if keyword in lowered and not _contains_negative_context(lowered, keyword):
+                matched.append({"category": category, "keyword": keyword})
+                break
+    return matched
+
+
 def _combined_case_text(patient: PatientInfo, symptoms: List[Symptom], answers: Optional[List[Dict[str, Any]]] = None) -> str:
     parts = [patient.history or "", patient.allergies or ""]
     parts.extend(symptom.description for symptom in symptoms)
@@ -421,17 +455,26 @@ def _combined_case_text(patient: PatientInfo, symptoms: List[Symptom], answers: 
 
 
 def screen_red_flags(symptoms: List[Symptom], answers: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
-    """结构化红旗征筛查，阴性表述不触发急诊分流。"""
-    text = "\n".join([s.description for s in symptoms] + [
-        "{} {}".format(a.get("question", ""), _stringify_answer(a.get("answer")))
-        for a in answers or []
-    ]).lower()
-    matched = []
-    for category, keywords in RED_FLAG_PATTERNS.items():
-        for keyword in keywords:
-            if keyword in text and not _contains_negative_context(text, keyword):
-                matched.append({"category": category, "keyword": keyword})
-                break
+    """筛查红旗征，不将问题题干误当作患者阳性症状。"""
+    matched = _find_red_flag_matches("\n".join(s.description for s in symptoms))
+
+    # 题干只用于解释“是/有”指向何种症状；症状阳性必须来自患者回答本身。
+    for item in answers or []:
+        answer = item.get("answer")
+        if _is_negative_answer(answer):
+            continue
+
+        answer_text = _stringify_answer(answer)
+        question_text = str(item.get("question", ""))
+        for category, keywords in RED_FLAG_PATTERNS.items():
+            for keyword in keywords:
+                answer_mentions_keyword = keyword in answer_text and not _contains_negative_context(answer_text, keyword)
+                confirms_question_keyword = keyword in question_text and _is_affirmative_answer(answer)
+                if answer_mentions_keyword or confirms_question_keyword:
+                    match = {"category": category, "keyword": keyword}
+                    if match not in matched:
+                        matched.append(match)
+                    break
 
     return {
         "is_emergency": bool(matched),
@@ -1039,6 +1082,22 @@ def get_duration_text(years: int, months: int, days: int = 0) -> str:
         parts.append(f"{days}天")
     return "".join(parts) if parts else "未填写"
 
+
+def format_symptoms_for_prompt(symptoms: List[Symptom]) -> str:
+    """将全部症状及其病程、严重度带入每轮模型上下文。"""
+    if not symptoms:
+        return "无"
+    return "\n".join(
+        "- 症状{}：{}（持续时间：{}；严重程度：{}）".format(
+            index,
+            symptom.description,
+            get_duration_text(symptom.duration_years, symptom.duration_months, symptom.duration_days),
+            get_severity_text(symptom.severity),
+        )
+        for index, symptom in enumerate(symptoms, 1)
+    )
+
+
 def get_severity_text(severity: int) -> str:
     """获取严重程度文本"""
     levels = {1: "轻", 2: "较轻", 3: "中", 4: "较重", 5: "重"}
@@ -1093,7 +1152,7 @@ async def call_deepseek(prompt: str, system_prompt: str = None, max_tokens: int 
 1. 严格按照「症状收集→诱因/既往史梳理→鉴别诊断→辅助检查建议→初步确诊」流程
 2. 优先引用国家卫健委全科医学临床路径、《内科学》统编教材、WHO相关诊疗规范
 3. 对未分化疾病，仅开展鉴别分析，设计定向追问问题
-4. 诊断结论必须明确「诊断名称+置信度+核心依据」
+4. 诊断结论必须明确「诊断名称+诊断支持度（0-100，仅用于排序）+核心依据」，诊断支持度不是患病概率或确诊概率
 5. 区分「必查项目」和「可选/进阶项目」
 
 行为红线：
@@ -1163,7 +1222,7 @@ EVIDENCE_BASED_SYSTEM_PROMPT = """你是一位资深循证全科医学专家，�
 1. 严格按照「症状收集→诱因/既往史梳理→鉴别诊断→辅助检查建议→初步确诊」分步推进
 2. 所有诊断依据优先引用国家卫健委全科医学临床路径、《内科学》统编教材、WHO相关诊疗规范
 3. 对症状不典型的未分化疾病，不随意下诊断，仅开展鉴别分析，设计定向追问问题
-4. 诊断结论必须明确「诊断名称+置信度（0-100%）+核心依据」
+4. 诊断结论必须明确「诊断名称+诊断支持度（0-100，仅用于排序）+核心依据」，诊断支持度不是患病概率或确诊概率
 5. 根据症状严重程度，明确给出「必查项目」和「可选/进阶项目」
 
 【行为红线】（严格遵守）
@@ -1330,7 +1389,7 @@ async def generate_initial_diagnosis(request: DiagnosisRequest) -> Dict:
 【第三步：鉴别诊断】
 - 如果是单个症状：列出可能的鉴别诊断（至少4个，按可能性排序）
 - 如果是多症状：分别列出每个症状对应的鉴别诊断，并分析症状间关联
-- 每个诊断需说明针对哪个症状，给出初始置信度（15-35%）
+- 每个诊断需说明针对哪个症状，给出初始诊断支持度（15-35，仅用于排序，不表示患病概率）
 - 引用相关指南或教材作为依据
 - 注意：同一疾病可能解释多个症状，需综合考虑
 
@@ -1361,7 +1420,7 @@ async def generate_initial_diagnosis(request: DiagnosisRequest) -> Dict:
   "differential_diagnoses": [
     {
       "disease": "疾病名称",
-      "confidence": 初始置信度,
+      "confidence": "初始诊断支持度（0-100，仅用于排序，不表示患病概率）",
       "reasoning": "为什么考虑这个诊断，引用循证依据",
       "category": "疾病分类",
       "related_symptoms": ["此诊断对应的症状"],
@@ -1459,7 +1518,7 @@ def _generate_fallback_questions(session: DiagnosisSession, current_round: int) 
     
     # 获取当前诊断假设
     symptoms = [s.description for s in session.symptoms]
-    symptom = symptoms[0] if symptoms else "症状"
+    symptom = "、".join(symptoms[:3]) if symptoms else "症状"
     
     # 基于症状生成基本问题
     fallback_questions = [
@@ -1521,7 +1580,7 @@ async def generate_follow_up_questions(
     
     # 当前诊断假设
     hypothesis_summary = "\n".join([
-        "- {}（置信度：{}%）：{}".format(d['disease'], d['confidence'], d.get('reasoning', '')[:50])
+        "- {}（诊断支持度：{}/100）：{}".format(d['disease'], d['confidence'], d.get('reasoning', '')[:50])
         for d in session.diagnosis_hypothesis[:4]
     ])
     
@@ -1540,23 +1599,23 @@ async def generate_follow_up_questions(
 3. 对于老年患者(>65岁)，必须考虑：不典型临床表现、多病共存、用药复杂性
 
 二、问题设计原则（每轮3-4个）
-1. 第一问：针对上一轮回答中最高置信度的诊断
+1. 第一问：针对上一轮回答中诊断支持度最高的诊断
 2. 第二问：针对需要排除的危险疾病（红旗征）
 3. 第三问：针对症状间的关联性
 4. 第四问：针对鉴别诊断的特异性症状
 5. 问题必须有逻辑递进关系，不能跳跃
 
-三、置信度收敛规则（核心）
+三、诊断支持度收敛规则（核心，不代表患病概率）
 1. 每次调整必须有明确证据，变化幅度5-20%
 2. 阳性体征/症状：+10-20%
 3. 阴性体征/症状：-10-15%
 4. 如果3个以上阳性指标指向同一诊断：+25-35%
 5. 如果已有70%以上且继续升高，终止追问
-6. 如果多个诊断置信度接近且差异<10%，增加鉴别问题
+6. 如果多个诊断支持度接近且差异<10%，增加鉴别问题
 
 四、诊断明确条件（智能收敛）
-- 主要诊断置信度≥70%，终止追问
-- 或前两位诊断置信度差距≥30%，终止追问
+- 主要诊断支持度≥70，终止追问
+- 或前两位诊断支持度差距≥30，终止追问
 - 最多追问6轮；未达到6轮时，只有诊断已经明确或出现红旗征才终止追问
 - 已完成4轮后，如果主要诊断仍不明确，应继续围绕关键鉴别点追问，避免机械结束
 - 优先考虑诊断质量而非轮次数量
@@ -1587,8 +1646,8 @@ async def generate_follow_up_questions(
   "diagnosis_updates": [
     {{
       "disease": "疾病名称",
-      "confidence": 更新后的置信度,
-      "confidence_change": "置信度变化原因（具体说明哪些回答支持或排除了该诊断）",
+      "confidence": 更新后的诊断支持度（0-100，仅用于排序）,
+      "confidence_change": "诊断支持度变化原因（具体说明哪些回答支持或排除了该诊断）",
       "supporting_evidence": ["支持该诊断的具体证据"],
       "ruling_out_evidence": ["排除该诊断的具体证据"],
       "evidence_source": "依据来源"
@@ -1627,12 +1686,12 @@ async def generate_follow_up_questions(
 既往病史：{session.patient_info.history or '无'}
 
 【已收集的症状】
-{session.symptoms[0].description if session.symptoms else '无'}
+{format_symptoms_for_prompt(session.symptoms)}
 
 【已完成的问诊回答】（共{current_round}轮）
 {answers_summary}
 
-【当前诊断假设】（按置信度排序）
+【当前诊断假设】（按诊断支持度排序，非患病概率）
 {hypothesis_summary}
 
 【当前轮次】：第{current_round}轮（共6轮）
@@ -1649,7 +1708,7 @@ async def generate_follow_up_questions(
 
 请进行循证医学临床思维链分析：
 
-1. 根据最新一轮回答，分析对各诊断置信度的影响，说明循证依据
+1. 根据最新一轮回答，分析对各诊断支持度的影响，说明循证依据
 2. 判断当前诊断是否已经足够明确
 3. 如果需要继续追问，设计下一轮问题（3-4个选择题，必须是3-4个）
 
@@ -1713,8 +1772,8 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
     final_system_prompt = EVIDENCE_BASED_SYSTEM_PROMPT + CONCISE_OUTPUT_PROMPT + """
 
 【最终诊断报告要求】
-1. 主要诊断：置信度≥50%的诊断，按置信度排序，最多3个
-2. 共病诊断/次要诊断：置信度30-50%的诊断
+1. 主要诊断：诊断支持度≥50的诊断，按支持度排序，最多3个；支持度不代表患病概率
+2. 共病诊断/次要诊断：诊断支持度30-50的诊断
 3. 每个诊断需给出详细推理过程和循证依据
 4. 诊断依据需具体、可查证到具体文献
 5. 参考文献需包含具体指南名称、章节、发表年份
@@ -1740,8 +1799,8 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
 
 请生成最终诊断报告：
 
-1. 主要诊断（置信度≥50%的诊断，按置信度排序，最多3个）
-2. 共病诊断/次要诊断（置信度30-50%的诊断）
+1. 主要诊断（诊断支持度≥50，按支持度排序，最多3个；不代表患病概率）
+2. 共病诊断/次要诊断（诊断支持度30-50）
 3. 每个诊断的详细推理过程（引用循证依据）
 4. 每个诊断的具体诊断依据（阳性症状、检查结果等）
 5. 参考文献/指南引用（必须包含具体指南名称和循证依据）
@@ -1755,9 +1814,9 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
   "diagnoses": [
     {
       "disease": "疾病名称",
-      "confidence": 置信度,
+      "confidence": 诊断支持度（0-100，仅用于排序，不表示患病概率）,
       "diagnosis_type": "主要诊断/共病可能",
-      "reasoning": "详细的推理过程，包括症状分析、鉴别诊断、置信度调整原因",
+      "reasoning": "详细的推理过程，包括症状分析、鉴别诊断、支持度调整原因",
       "evidence": ["具体证据1", "证据2"],
       "evidence_source": ["依据1（指南/教材名称）", "依据2"],
       "references": [
@@ -1782,14 +1841,14 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
 ```
 
 注意：
-- 置信度四舍五入到整数
+- 诊断支持度四舍五入到整数，不得表述为患病概率或确诊概率
 - 每个诊断至少包含2条证据
 - 参考文献必须有具体内容，不能只写标题
 - 如需急诊，需明确标注
 """
     
     # 使用f-string替代format()避免JSON大括号冲突
-    symptoms_desc = session.symptoms[0].description if session.symptoms else '无'
+    symptoms_desc = format_symptoms_for_prompt(session.symptoms)
     
     prompt = f"""
 【最终诊断请求】
@@ -1813,7 +1872,7 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
   "diagnoses": [
     {{
       "disease": "疾病名称",
-      "confidence": 置信度,
+      "confidence": 诊断支持度（0-100，仅用于排序，不表示患病概率）,
       "diagnosis_type": "主要诊断/共病可能",
       "reasoning": "详细推理过程",
       "evidence": ["证据1", "证据2"],
