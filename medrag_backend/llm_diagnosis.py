@@ -19,6 +19,25 @@ from fastapi.responses import JSONResponse
 import httpx
 from dotenv import load_dotenv
 
+try:
+    from .clinical_prompts import (
+        FINAL_REPORT_SYSTEM_PROMPT,
+        FOLLOW_UP_SYSTEM_PROMPT,
+        GENERAL_CLINICAL_SYSTEM_PROMPT,
+        build_final_report_prompt,
+        build_follow_up_prompt,
+        build_initial_prompt,
+    )
+except ImportError:
+    from clinical_prompts import (
+        FINAL_REPORT_SYSTEM_PROMPT,
+        FOLLOW_UP_SYSTEM_PROMPT,
+        GENERAL_CLINICAL_SYSTEM_PROMPT,
+        build_final_report_prompt,
+        build_follow_up_prompt,
+        build_initial_prompt,
+    )
+
 # 加载环境变量
 load_dotenv()
 
@@ -1115,6 +1134,28 @@ def format_symptoms_for_prompt(symptoms: List[Symptom]) -> str:
     )
 
 
+def build_prompt_symptoms(symptoms: List[Symptom]) -> List[Dict[str, Any]]:
+    return [
+        {
+            "description": symptom.description,
+            "duration": get_duration_text(symptom.duration_years, symptom.duration_months, symptom.duration_days),
+            "severity": get_severity_text(symptom.severity),
+        }
+        for symptom in symptoms
+    ]
+
+
+def build_prompt_answers(answers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return [
+        {
+            "round": item.get("round"),
+            "question": _clip_text(item.get("question", ""), 80),
+            "answer": _clip_text(_stringify_answer(item.get("answer")), 100),
+        }
+        for item in answers[-PROMPT_HISTORY_MAX_ITEMS:]
+    ]
+
+
 def get_severity_text(severity: int) -> str:
     """获取严重程度文本"""
     levels = {1: "轻", 2: "较轻", 3: "中", 4: "较重", 5: "重"}
@@ -1233,37 +1274,8 @@ async def call_deepseek(prompt: str, system_prompt: str = None, max_tokens: int 
     raise HTTPException(status_code=502, detail="AI诊断服务调用失败: {}".format(str(last_error)))
 
 # ==================== 循证医学系统提示词 ====================
-EVIDENCE_BASED_SYSTEM_PROMPT = """你是一位资深循证全科医学专家，擅长通过标准化临床思维链开展疾病辅助诊断。
-
-【核心原则】
-1. 严格按照「症状收集→诱因/既往史梳理→鉴别诊断→辅助检查建议→初步确诊」分步推进
-2. 所有诊断依据优先引用国家卫健委全科医学临床路径、《内科学》统编教材、WHO相关诊疗规范
-3. 对症状不典型的未分化疾病，不随意下诊断，仅开展鉴别分析，设计定向追问问题
-4. 诊断结论必须明确「诊断名称+诊断支持度（0-100，仅用于排序）+核心依据」，诊断支持度不是患病概率或确诊概率
-5. 根据症状严重程度，明确给出「必查项目」和「可选/进阶项目」
-
-【行为红线】（严格遵守）
-1. 不开具具体处方剂量、用药频次，不做最终确诊，仅提供辅助诊断和合理建议
-2. 对急危重症（如胸痛、呼吸困难、昏迷、大出血、高热惊厥等），优先在「风险分层」标注「急诊/立即转诊」
-3. 语言严谨、客观，不夸大病情、不恐吓患者，不使用模糊、不确定的表述
-4. 严格遵循JSON格式输出，字段完整、无语法错误
-
-【循证依据引用格式】
-- 国内指南：国家卫健委《XXX临床路径》、《中国XXX诊疗指南202X》
-- 教材：《内科学》第9版，人民卫生出版社
-- WHO规范：WHO《XXX management guideline》
-"""
-
-CONCISE_OUTPUT_PROMPT = """
-
-【输出风格】
-1. 结论优先，只保留对诊断、分诊、下一步检查有影响的信息。
-2. 不展开长篇思维链；reasoning_chain/clinical_reasoning 只写1-2句临床摘要。
-3. 每个诊断的 reasoning 不超过80字，先写支持点，再写需要排除点。
-4. evidence、suggestions、required_examinations、optional_examinations 每类最多3条。
-5. 追问问题只问最关键的3个；每个问题一句话，选项短、互斥、可直接点击。
-6. 不重复患者已提供的信息，不写泛泛科普，不输出处方剂量。
-"""
+EVIDENCE_BASED_SYSTEM_PROMPT = GENERAL_CLINICAL_SYSTEM_PROMPT
+CONCISE_OUTPUT_PROMPT = ""
 
 # ==================== LLM临床思维链核心功能 ====================
 
@@ -1493,6 +1505,17 @@ async def generate_initial_diagnosis(request: DiagnosisRequest) -> Dict:
 
     prompt = patient_info + symptoms_info + prompt
 
+    prompt = build_initial_prompt(
+        patient={
+            "age": request.patient.age,
+            "gender": get_gender_text(request.patient.gender),
+            "history": request.patient.history or "无",
+            "allergies": request.patient.allergies or "无",
+        },
+        symptoms=build_prompt_symptoms(request.symptoms),
+        clinical_state=clinical_state,
+    )
+
     try:
         result = await call_deepseek(
             prompt,
@@ -1720,6 +1743,20 @@ async def generate_follow_up_questions(
 请生成下一轮的诊断更新和问题。
 '''
 
+    follow_up_system_prompt = FOLLOW_UP_SYSTEM_PROMPT
+    prompt = build_follow_up_prompt(
+        patient={
+            "age": session.patient_info.age,
+            "gender": get_gender_text(session.patient_info.gender),
+            "history": session.patient_info.history or "无",
+            "allergies": session.patient_info.allergies or "无",
+        },
+        symptoms=build_prompt_symptoms(session.symptoms),
+        answers=build_prompt_answers(session.all_answers),
+        hypotheses=session.diagnosis_hypothesis[:4],
+        current_round=current_round,
+    )
+
     try:
         result = await call_deepseek(
             prompt,
@@ -1892,6 +1929,19 @@ async def generate_final_diagnosis(session: DiagnosisSession) -> Dict:
 }}
 ```
 """
+
+    final_system_prompt = FINAL_REPORT_SYSTEM_PROMPT
+    prompt = build_final_report_prompt(
+        patient={
+            "age": session.patient_info.age,
+            "gender": get_gender_text(session.patient_info.gender),
+            "history": session.patient_info.history or "无",
+            "allergies": session.patient_info.allergies or "无",
+        },
+        symptoms=build_prompt_symptoms(session.symptoms),
+        answers=build_prompt_answers(session.all_answers),
+        hypotheses=session.diagnosis_hypothesis[:4],
+    )
 
     try:
         result = await call_deepseek(

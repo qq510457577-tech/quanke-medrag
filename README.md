@@ -16,8 +16,8 @@
 |------|------|
 | 🔍 多症状分析 | 输入自然语言症状，自动提取关键词并匹配疾病库 |
 | 🤖 LLM 临床思维链 | 调用 DeepSeek-chat，生成专业的逐步追问与推理 |
-| 💬 动态智能追问 | 最多 3 轮结构化追问，逐步缩小诊断范围 |
-| 📊 置信度更新 | 每轮追问后实时更新各疾病的匹配置信度 |
+| 💬 动态智能追问 | 根据诊断明确度动态追问，最多 6 轮 |
+| 📊 诊断支持度更新 | 每轮追问后更新诊断支持度，仅用于排序，不代表患病概率 |
 | 📋 结构化诊断报告 | 输出初步诊断、鉴别诊断、建议检查、治疗方案 |
 | 🌐 Web 界面 | 基于 Vue 3 的响应式前端，支持 PC 和移动端 |
 | 🐳 Docker 支持 | 一键 docker-compose 启动，生产环境就绪 |
@@ -32,10 +32,9 @@
      │  HTTP REST API
      ▼
 FastAPI 后端 (Python)
-  ├── /api/analyze        — 症状分析 + 初步诊断
-  ├── /api/diagnose       — 最终诊断报告
-  ├── /api/chat           — 对话式问诊
-  └── /api/knowledge      — 医学知识库概览
+  ├── /api/diagnosis/start      — 症状收集、红旗分流与首轮问题
+  ├── /api/diagnosis/follow-up  — 动态结构化追问
+  └── /api/diagnosis/final      — 最终辅助诊断报告
      │
      │  HTTPS
      ▼
@@ -62,7 +61,7 @@ pip install -r medrag_backend/requirements.txt
 
 # 4. 启动后端
 cd medrag_backend
-python main.py
+python -m uvicorn llm_diagnosis:app --host 0.0.0.0 --port 8000
 
 # 5. 浏览器打开前端
 # 直接用浏览器打开 medrag_frontend/index.html
@@ -88,9 +87,8 @@ docker-compose up -d
 ```
 medrag/
 ├── medrag_backend/          # FastAPI 后端
-│   ├── main.py              # 主服务（规则引擎 + LLM）
-│   ├── llm_diagnosis.py     # LLM 临床思维链模块
-│   ├── server.py            # 轻量版服务
+│   ├── llm_diagnosis.py     # 生产服务、分流规则与会话流程
+│   ├── clinical_prompts.py  # 英文临床提示词与 JSON 契约
 │   └── requirements.txt     # Python 依赖
 ├── medrag_frontend/         # 前端页面
 │   ├── index.html           # 主界面（临床思维链版）
@@ -122,7 +120,7 @@ medrag/
 
 ## API 接口说明
 
-### POST `/api/analyze` — 症状分析
+### POST `/api/diagnosis/start` — 开始辅助诊断
 
 ```json
 {
@@ -132,13 +130,13 @@ medrag/
 }
 ```
 
-### POST `/api/diagnose` — 最终诊断
+### POST `/api/diagnosis/follow-up` — 提交本轮回答
 
-根据追问回答生成结构化诊断报告，包含：初步诊断、诊断依据、鉴别诊断、建议检查、治疗建议、注意事项。
+根据本轮结构化回答，更新诊断支持度，并按需要返回下一轮问题。最多 6 轮；出现红旗征时停止常规追问。
 
-### POST `/api/chat` — 对话问诊
+### POST `/api/diagnosis/final` — 最终报告
 
-支持多轮自由对话，由 LLM 主导追问流程。
+输出结构化辅助诊断、需排除疾病、检查建议、风险分层和就医建议。
 
 ---
 
@@ -147,6 +145,9 @@ medrag/
 | 变量名 | 说明 | 必填 |
 |--------|------|------|
 | `DEEPSEEK_API_KEY` | DeepSeek 平台 API Key | ✅ |
+| `FOLLOW_UP_MAX_TOKENS` | 单轮追问最大生成 token，默认 `900` | 否 |
+| `FINAL_REPORT_MAX_TOKENS` | 最终报告最大生成 token，默认 `1200` | 否 |
+| `PROMPT_HISTORY_MAX_ITEMS` | 带入模型的最近问答条数，默认 `18` | 否 |
 
 申请地址：https://platform.deepseek.com
 
