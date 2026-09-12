@@ -870,7 +870,7 @@
             const data = await response.json();
             sessionId.value = data.session_id;
             diagnosisHypothesis.value = data.differential_diagnoses || [];
-            currentQuestions.value = data.current_questions || [];
+            currentQuestions.value = data.first_round_questions || data.current_questions || [];
             reasoningChain.value = data.reasoning_chain || '';
             isDiagnosisClear.value = data.is_diagnosis_clear || false;
             
@@ -883,7 +883,12 @@
               }
             });
             
-            currentRound.value = 1;
+            currentRound.value = data.round_count || 1;
+            maxRounds.value = data.max_rounds || maxRounds.value;
+            if (data.is_emergency || !currentQuestions.value.length) {
+              await submitDiagnosis();
+              return;
+            }
             currentStep.value = 2;
             apiStatus.value = 'ready';
           } catch (error) {
@@ -955,6 +960,8 @@
             
             // 更新诊断明确状态
             isDiagnosisClear.value = data.is_diagnosis_clear || false;
+            currentRound.value = data.round_count || currentRound.value;
+            maxRounds.value = data.max_rounds || maxRounds.value;
             
             // 获取下一轮问题或完成诊断
             if (!isDiagnosisClear.value && data.next_round_questions && data.next_round_questions.length > 0 && currentRound.value < maxRounds.value) {
@@ -1006,7 +1013,18 @@
             
             const data = await response.json();
             
-            finalDiagnoses.value = data.diagnoses || [];
+            finalDiagnoses.value = (data.diagnoses || []).map((item, index) => ({
+              disease: item.disease || item.name || '待明确',
+              confidence: item.support_score ?? item.confidence ?? item.probability ?? 0,
+              diagnosis_type: index === 0 ? '主要诊断' : '鉴别诊断',
+              reasoning: (item.basis || []).join('；') || data.clinical_reasoning || '',
+              evidence: item.basis || [],
+              suggestions: item.next_steps || [],
+              references: (data.references || []).map((reference) => ({
+                ...reference,
+                content: reference.summary || (reference.evidence_paragraphs || []).map((paragraph) => paragraph.text).join(' '),
+              })),
+            }));
             clinicalReasoning.value = data.clinical_reasoning || '';
             
             // 初始化参考文献展开状态

@@ -49,11 +49,11 @@ DeepSeek Cloud (deepseek-chat)
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/qq510457577-tech/medrag.git
-cd medrag
+git clone https://github.com/qq510457577-tech/quanke-medrag.git
+cd quanke-medrag
 
 # 2. 配置环境变量
-cp .env.example .env
+cp medrag_backend/.env.example medrag_backend/.env
 # 编辑 .env，填入您的 DeepSeek API Key
 
 # 3. 安装依赖
@@ -61,10 +61,10 @@ pip install -r medrag_backend/requirements.txt
 
 # 4. 启动后端
 cd medrag_backend
-python -m uvicorn llm_diagnosis:app --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 # 5. 浏览器打开前端
-# 直接用浏览器打开 medrag_frontend/index.html
+# 直接用浏览器打开 medrag_frontend/llm_index.html
 ```
 
 ### 方式二：Docker Compose（推荐）
@@ -87,8 +87,12 @@ docker-compose up -d
 ```
 medrag/
 ├── medrag_backend/          # FastAPI 后端
-│   ├── llm_diagnosis.py     # 生产服务、分流规则与会话流程
-│   ├── clinical_prompts.py  # 英文临床提示词与 JSON 契约
+│   ├── app/                 # 生产模块化服务
+│   │   ├── main.py          # FastAPI 路由
+│   │   ├── services/        # 分诊、知识图谱、RAG、会话与 LLM 服务
+│   │   └── data/            # 本地知识图谱、参考资料与 TF-IDF 索引
+│   ├── llm_diagnosis.py     # 旧版兼容实现
+│   ├── clinical_prompts.py  # 旧版英文提示词契约
 │   └── requirements.txt     # Python 依赖
 ├── medrag_frontend/         # 前端页面
 │   ├── index.html           # 主界面（临床思维链版）
@@ -145,9 +149,9 @@ medrag/
 | 变量名 | 说明 | 必填 |
 |--------|------|------|
 | `DEEPSEEK_API_KEY` | DeepSeek 平台 API Key | ✅ |
-| `FOLLOW_UP_MAX_TOKENS` | 单轮追问最大生成 token，默认 `900` | 否 |
-| `FINAL_REPORT_MAX_TOKENS` | 最终报告最大生成 token，默认 `1200` | 否 |
-| `PROMPT_HISTORY_MAX_ITEMS` | 带入模型的最近问答条数，默认 `18` | 否 |
+| `DEEPSEEK_MODEL` | DeepSeek 模型名，默认 `deepseek-chat` | 否 |
+| `DEEPSEEK_BASE_URL` | DeepSeek API 地址 | 否 |
+| `CORS_ORIGINS` | 允许的跨域来源，以逗号分隔 | 否 |
 
 申请地址：https://platform.deepseek.com
 
@@ -155,9 +159,7 @@ medrag/
 
 ## 免责声明
 
-> ⚠️ **本系统仅供辅助参考，不构成正式医疗诊断建议。**  
-> 实际临床诊断必须由具有执业资格的医师面诊确定。  
-> 如出现紧急症状，请立即拨打 120 或前往最近医院急诊。
+> 本次辅助诊断仅用于参考，不能替代临床判断；具体诊疗方案请结合患者实际临床情况、体格检查、辅助检查结果及医生意见确定。如出现胸痛、呼吸困难、意识异常、严重出血、持续高热等急危重症请立即就医。
 
 ---
 

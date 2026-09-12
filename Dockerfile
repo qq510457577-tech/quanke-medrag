@@ -10,9 +10,8 @@ WORKDIR /app
 COPY medrag_backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制后端代码
-COPY medrag_backend/llm_diagnosis.py .
-COPY medrag_backend/start_llm.py .
+# Copy the modular backend, including the bundled graph and local vector index.
+COPY medrag_backend/app ./app
 
 # 阶段2: Nginx前端构建
 FROM nginx:alpine as frontend
@@ -30,8 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置环境变量
-ENV PYTHONUNBUFFERED=1 \
-    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-sk-5c8e622180db4be792584b4c814343d2}
+ENV PYTHONUNBUFFERED=1
 
 # 创建目录
 RUN mkdir -p /app /var/log/supervisor

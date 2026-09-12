@@ -1,0 +1,344 @@
+{
+  "symptoms": [
+    {
+      "name": "水肿",
+      "aliases": ["浮肿", "下肢肿", "双腿肿"],
+      "body_parts": ["下肢", "眼睑", "全身"],
+      "activity_limitations": ["步行耐量下降", "活动后气促", "鞋袜变紧"],
+      "common_diseases": [
+        {
+          "name": "心力衰竭相关水肿",
+          "category": "心血管系统",
+          "base_score": 68,
+          "clues": ["下肢对称性凹陷性水肿", "平卧呼吸困难", "活动后气促"],
+          "related_symptoms": ["水肿", "胸闷", "乏力"],
+          "recommended_exams": ["血压和脉搏", "心电图", "胸片或超声心动图", "NT-proBNP（如可及）"],
+          "reference_ids": ["ref_local_edema_2025", "ref_nice_chest_pain_cg95"]
+        },
+        {
+          "name": "肾病综合征或肾功能异常",
+          "category": "泌尿系统",
+          "base_score": 65,
+          "clues": ["晨起眼睑水肿", "泡沫尿或尿量变化", "血压异常"],
+          "related_symptoms": ["水肿", "乏力"],
+          "recommended_exams": ["尿常规", "肾功能", "尿蛋白定量"],
+          "reference_ids": ["ref_local_edema_2025"]
+        }
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "edema_site", "question": "水肿最先出现在哪个部位？", "input_type": "single", "options": ["眼睑", "双下肢", "全身", "说不清"], "purpose": "区分心肾肝等常见病因"},
+        {"round": 2, "question_id": "edema_urine", "question": "近期是否伴有尿量减少、泡沫尿或夜尿增多？", "input_type": "multiple", "options": ["没有", "尿量减少", "泡沫尿", "夜尿增多"], "purpose": "识别肾脏线索"},
+        {"round": 3, "question_id": "edema_breath", "question": "是否伴有夜间憋醒、平卧气短或胸闷？", "input_type": "multiple", "options": ["没有", "夜间憋醒", "平卧气短", "胸闷"], "purpose": "排查心衰红旗征"},
+        {"round": 4, "question_id": "edema_exam", "question": "查体是否为凹陷性水肿，双肺有无湿啰音？", "input_type": "single", "options": ["凹陷性水肿", "非凹陷性水肿", "有湿啰音", "暂无查体"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "edema_lab", "question": "是否已有尿常规、肾功能或心电图结果？", "input_type": "multiple", "options": ["暂无", "尿蛋白异常", "肌酐升高", "心电图异常"], "purpose": "整合客观证据"},
+        {"round": 6, "question_id": "edema_plan", "question": "当前更需要哪一步？", "input_type": "single", "options": ["完善心肾检查", "先对症处理并随访", "尽快转诊", "急诊处理"], "purpose": "形成处置方案"}
+      ]
+    },
+    {
+      "name": "消瘦",
+      "aliases": ["体重下降", "越来越瘦"],
+      "body_parts": ["全身"],
+      "activity_limitations": ["体力下降", "劳动耐量下降"],
+      "common_diseases": [
+        {"name": "肿瘤相关消瘦", "category": "肿瘤", "base_score": 67, "clues": ["进行性体重下降", "食欲差", "伴持续发热或贫血"], "related_symptoms": ["消瘦", "发热", "乏力"], "recommended_exams": ["血常规", "粪便潜血", "胸腹部影像"], "reference_ids": ["ref_local_emaciation_2025"]},
+        {"name": "甲状腺功能亢进", "category": "内分泌系统", "base_score": 61, "clues": ["消瘦伴心悸", "怕热多汗", "食欲增加但体重下降"], "related_symptoms": ["消瘦", "心悸"], "recommended_exams": ["TSH", "FT3/FT4"], "reference_ids": ["ref_local_emaciation_2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "thin_timeline", "question": "体重下降持续多久，大约下降了多少？", "input_type": "single", "options": ["1月内", "1-3月", "3月以上", "不清楚"], "purpose": "判断病程与严重程度"},
+        {"round": 2, "question_id": "thin_appetite", "question": "是否伴有食欲下降、夜间盗汗或怕热多汗？", "input_type": "multiple", "options": ["没有", "食欲下降", "盗汗", "怕热多汗"], "purpose": "区分肿瘤、感染和内分泌因素"},
+        {"round": 3, "question_id": "thin_redflag", "question": "是否出现便血黑便、持续发热或明显贫血表现？", "input_type": "multiple", "options": ["没有", "便血/黑便", "持续发热", "头晕面白"], "purpose": "识别红旗征"},
+        {"round": 4, "question_id": "thin_exam", "question": "查体有无淋巴结肿大、甲状腺肿大或肌肉明显萎缩？", "input_type": "multiple", "options": ["暂无查体", "淋巴结肿大", "甲状腺肿大", "肌肉萎缩"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "thin_lab", "question": "是否已有血常规、甲功或胸腹部检查结果？", "input_type": "multiple", "options": ["暂无", "血常规异常", "甲功异常", "影像异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "thin_plan", "question": "当前更倾向哪种处理？", "input_type": "single", "options": ["完善筛查", "按高危病因转诊", "营养干预并复诊", "住院评估"], "purpose": "形成处置建议"}
+      ]
+    },
+    {
+      "name": "咳嗽",
+      "aliases": ["干咳", "咳痰"],
+      "body_parts": ["咽喉", "气道", "肺部"],
+      "activity_limitations": ["活动后咳重", "夜间影响睡眠"],
+      "common_diseases": [
+        {"name": "上呼吸道感染", "category": "呼吸系统", "base_score": 64, "clues": ["急性起病", "咽痛流涕", "低中度发热"], "related_symptoms": ["咳嗽", "发热"], "recommended_exams": ["体温", "肺部听诊"], "reference_ids": ["ref_medrag_www2025"]},
+        {"name": "社区获得性肺炎", "category": "呼吸系统", "base_score": 66, "clues": ["咳嗽伴发热", "黄痰或气促", "肺部啰音"], "related_symptoms": ["咳嗽", "发热", "胸闷"], "recommended_exams": ["血常规", "CRP", "胸片"], "reference_ids": ["ref_medrag_www2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "cough_type", "question": "咳嗽更接近哪种情况？", "input_type": "single", "options": ["干咳", "白痰", "黄痰", "夜间为主"], "purpose": "明确症状性质"},
+        {"round": 2, "question_id": "cough_assoc", "question": "是否伴发热、气促、咽痛或返酸？", "input_type": "multiple", "options": ["没有", "发热", "气促", "咽痛", "返酸"], "purpose": "细化鉴别诊断"},
+        {"round": 3, "question_id": "cough_redflag", "question": "是否出现咯血、静息气短或胸痛？", "input_type": "multiple", "options": ["没有", "咯血", "静息气短", "胸痛"], "purpose": "排查红旗征"},
+        {"round": 4, "question_id": "cough_exam", "question": "肺部听诊或血氧有无异常？", "input_type": "single", "options": ["暂无", "湿啰音", "哮鸣音", "血氧下降"], "purpose": "补充查体"},
+        {"round": 5, "question_id": "cough_test", "question": "是否已有血常规、CRP 或胸片结果？", "input_type": "multiple", "options": ["暂无", "炎症指标升高", "胸片异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "cough_plan", "question": "当前更需要哪一步？", "input_type": "single", "options": ["对症处理随访", "抗感染评估", "完善胸片", "转上级医院"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "乏力",
+      "aliases": ["没劲", "疲乏"],
+      "body_parts": ["全身"],
+      "activity_limitations": ["劳动耐量下降", "晨起无力", "白天困倦"],
+      "common_diseases": [
+        {"name": "贫血", "category": "血液系统", "base_score": 63, "clues": ["乏力伴头晕心悸", "面色苍白", "月经过多或慢性失血"], "related_symptoms": ["乏力", "头晕", "心悸"], "recommended_exams": ["血常规", "铁蛋白"], "reference_ids": ["ref_local_fatigue_2024", "ref_aafp_fatigue_2023"]},
+        {"name": "感染后疲劳或慢性感染", "category": "感染", "base_score": 58, "clues": ["乏力伴发热", "病程迁延", "近期感染史"], "related_symptoms": ["乏力", "发热"], "recommended_exams": ["血常规", "CRP", "肝肾功能"], "reference_ids": ["ref_local_fatigue_2024", "ref_aafp_fatigue_2023"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "fatigue_course", "question": "乏力是突然出现还是慢慢加重？", "input_type": "single", "options": ["突然出现", "逐渐加重", "反复发作", "说不清"], "purpose": "明确病程"},
+        {"round": 2, "question_id": "fatigue_assoc", "question": "是否伴头晕、心悸、发热或睡眠差？", "input_type": "multiple", "options": ["没有", "头晕", "心悸", "发热", "睡眠差"], "purpose": "寻找可逆原因"},
+        {"round": 3, "question_id": "fatigue_redflag", "question": "是否伴体重下降、黑便便血或进行性加重？", "input_type": "multiple", "options": ["没有", "体重下降", "黑便便血", "进行性加重"], "purpose": "识别高危病因"},
+        {"round": 4, "question_id": "fatigue_exam", "question": "查体是否发现面色苍白、淋巴结肿大或甲状腺肿大？", "input_type": "multiple", "options": ["暂无查体", "面色苍白", "淋巴结肿大", "甲状腺肿大"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "fatigue_lab", "question": "是否已有血常规、甲功、血糖等结果？", "input_type": "multiple", "options": ["暂无", "血常规异常", "甲功异常", "血糖异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "fatigue_plan", "question": "下一步更需要什么？", "input_type": "single", "options": ["先做基础筛查", "转专科评估", "调整生活方式并复诊", "住院进一步检查"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "发热",
+      "aliases": ["发烧", "体温高"],
+      "body_parts": ["全身"],
+      "activity_limitations": ["卧床", "食欲下降"],
+      "common_diseases": [
+        {"name": "病毒性上呼吸道感染", "category": "感染", "base_score": 62, "clues": ["急性起病", "咽痛流涕", "低中度发热"], "related_symptoms": ["发热", "咳嗽"], "recommended_exams": ["体温", "血常规"], "reference_ids": ["ref_medrag_www2025"]},
+        {"name": "细菌性感染或肺炎", "category": "感染", "base_score": 66, "clues": ["高热", "寒战", "咳黄痰或局部感染体征"], "related_symptoms": ["发热", "咳嗽", "乏力"], "recommended_exams": ["血常规", "CRP", "胸片"], "reference_ids": ["ref_medrag_www2025", "ref_local_fatigue_2024"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "fever_peak", "question": "体温最高大约到多少？", "input_type": "single", "options": ["未测量", "37.5-38℃", "38-39℃", "39℃以上"], "purpose": "判断发热程度"},
+        {"round": 2, "question_id": "fever_assoc", "question": "是否伴咳嗽、腹痛、尿痛或皮疹？", "input_type": "multiple", "options": ["没有", "咳嗽", "腹痛", "尿痛", "皮疹"], "purpose": "定位感染来源"},
+        {"round": 3, "question_id": "fever_redflag", "question": "是否出现意识差、呼吸困难或低血压表现？", "input_type": "multiple", "options": ["没有", "意识差", "呼吸困难", "低血压/头晕"], "purpose": "识别严重感染"},
+        {"round": 4, "question_id": "fever_exam", "question": "查体最主要的定位体征是什么？", "input_type": "single", "options": ["咽部充血", "肺部啰音", "腹部压痛", "暂无查体"], "purpose": "补充查体"},
+        {"round": 5, "question_id": "fever_lab", "question": "是否已有血常规、CRP 或影像结果？", "input_type": "multiple", "options": ["暂无", "白细胞升高", "CRP升高", "影像异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "fever_plan", "question": "当前更适合哪种处理？", "input_type": "single", "options": ["家庭观察", "门诊复评", "完善感染检查", "急诊评估"], "purpose": "形成处置"}
+      ]
+    },
+    {
+      "name": "瘙痒",
+      "aliases": ["皮肤痒", "全身痒"],
+      "body_parts": ["皮肤", "外阴", "肛周"],
+      "activity_limitations": ["影响睡眠", "抓挠影响工作"],
+      "common_diseases": [
+        {"name": "湿疹或过敏性皮炎", "category": "皮肤科", "base_score": 61, "clues": ["局部皮疹", "接触后加重", "夜间瘙痒"], "related_symptoms": ["瘙痒"], "recommended_exams": ["皮肤查体", "过敏史评估"], "reference_ids": ["ref_medrag_www2025"]},
+        {"name": "肝胆淤积或系统性瘙痒", "category": "消化系统", "base_score": 55, "clues": ["无明显皮疹", "全身瘙痒", "尿黄或黄疸"], "related_symptoms": ["瘙痒", "乏力"], "recommended_exams": ["肝功能", "胆红素"], "reference_ids": ["ref_medrag_www2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "itch_site", "question": "瘙痒主要在局部还是全身？", "input_type": "single", "options": ["局部", "全身", "夜间明显", "说不清"], "purpose": "区分局部皮肤病与系统性瘙痒"},
+        {"round": 2, "question_id": "itch_rash", "question": "是否伴有皮疹、黄疸或新接触药物？", "input_type": "multiple", "options": ["没有", "皮疹", "黄疸", "新用药"], "purpose": "寻找病因"},
+        {"round": 3, "question_id": "itch_redflag", "question": "是否伴发热、体重下降或进行性加重？", "input_type": "multiple", "options": ["没有", "发热", "体重下降", "进行性加重"], "purpose": "识别系统性病因"},
+        {"round": 4, "question_id": "itch_exam", "question": "查体更接近哪种发现？", "input_type": "single", "options": ["湿疹样皮损", "抓痕明显", "黄染", "暂无查体"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "itch_lab", "question": "是否已有肝功能、胆红素或过敏相关检查？", "input_type": "multiple", "options": ["暂无", "肝酶异常", "胆红素升高", "过敏提示"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "itch_plan", "question": "下一步更偏向？", "input_type": "single", "options": ["皮肤科处理", "查系统性病因", "短期随访", "转上级医院"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "麻木",
+      "aliases": ["肢体麻", "手麻", "脚麻"],
+      "body_parts": ["手", "脚", "面部"],
+      "activity_limitations": ["精细动作下降", "步行不稳"],
+      "common_diseases": [
+        {"name": "周围神经病变", "category": "神经系统", "base_score": 63, "clues": ["手套袜套样麻木", "糖尿病史", "感觉减退"], "related_symptoms": ["麻木"], "recommended_exams": ["神经系统查体", "空腹血糖"], "reference_ids": ["ref_medrag_www2025"]},
+        {"name": "脑卒中或短暂性脑缺血发作", "category": "神经系统", "base_score": 70, "clues": ["突发单侧麻木", "伴言语不清或无力", "高血压风险"], "related_symptoms": ["麻木", "头晕"], "recommended_exams": ["血压", "神经系统查体", "头颅影像"], "reference_ids": ["ref_medrag_www2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "numb_distribution", "question": "麻木是单侧为主还是双手双脚对称？", "input_type": "single", "options": ["单侧", "双手双脚对称", "局部手指", "说不清"], "purpose": "识别中枢或周围神经线索"},
+        {"round": 2, "question_id": "numb_assoc", "question": "是否伴无力、言语不清或糖尿病史？", "input_type": "multiple", "options": ["没有", "无力", "言语不清", "糖尿病史"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "numb_redflag", "question": "症状是否突发并在数分钟到数小时内达到高峰？", "input_type": "yesno", "options": ["是", "否"], "purpose": "排查脑血管急症"},
+        {"round": 4, "question_id": "numb_exam", "question": "查体是否有肌力下降或病理反射？", "input_type": "multiple", "options": ["暂无查体", "肌力下降", "病理反射阳性"], "purpose": "补充神经查体"},
+        {"round": 5, "question_id": "numb_test", "question": "是否已有血糖、维生素B12或头颅影像结果？", "input_type": "multiple", "options": ["暂无", "血糖异常", "维B12低", "头颅影像异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "numb_plan", "question": "当前处置更偏向？", "input_type": "single", "options": ["急诊评估卒中", "门诊神经评估", "先查代谢因素", "随访观察"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "耳鸣",
+      "aliases": ["耳朵响"],
+      "body_parts": ["耳部"],
+      "activity_limitations": ["影响睡眠", "注意力下降"],
+      "common_diseases": [
+        {"name": "感音神经性耳鸣", "category": "耳鼻喉科", "base_score": 58, "clues": ["持续耳鸣", "听力下降", "噪声暴露史"], "related_symptoms": ["耳鸣"], "recommended_exams": ["耳镜检查", "听力学检查"], "reference_ids": ["ref_medrag_www2025"]},
+        {"name": "梅尼埃病", "category": "耳鼻喉科", "base_score": 60, "clues": ["耳鸣伴眩晕", "波动性听力下降", "耳闷胀感"], "related_symptoms": ["耳鸣", "头晕"], "recommended_exams": ["听力学检查", "前庭功能评估"], "reference_ids": ["ref_medrag_www2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "tinnitus_type", "question": "耳鸣是持续存在还是阵发性出现？", "input_type": "single", "options": ["持续", "阵发性", "夜间明显", "说不清"], "purpose": "明确病程"},
+        {"round": 2, "question_id": "tinnitus_assoc", "question": "是否伴听力下降、眩晕或耳闷？", "input_type": "multiple", "options": ["没有", "听力下降", "眩晕", "耳闷"], "purpose": "定位病因"},
+        {"round": 3, "question_id": "tinnitus_redflag", "question": "是否为单侧进行性加重或伴神经系统症状？", "input_type": "multiple", "options": ["没有", "单侧加重", "面部麻木", "步态不稳"], "purpose": "识别高危病因"},
+        {"round": 4, "question_id": "tinnitus_exam", "question": "耳镜检查或神经查体是否异常？", "input_type": "single", "options": ["暂无", "耳道/鼓膜异常", "神经查体异常"], "purpose": "补充查体"},
+        {"round": 5, "question_id": "tinnitus_test", "question": "是否已有听力学或影像检查结果？", "input_type": "multiple", "options": ["暂无", "听力下降", "影像异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "tinnitus_plan", "question": "下一步更适合？", "input_type": "single", "options": ["耳鼻喉门诊", "完善听力检查", "转上级医院", "观察随访"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "口干",
+      "aliases": ["嘴干"],
+      "body_parts": ["口腔", "唾液腺", "咽部"],
+      "activity_limitations": ["频繁饮水", "进食受限", "言语不适"],
+      "common_diseases": [
+        {"name": "干燥综合征相关口干", "category": "风湿免疫", "base_score": 66, "clues": ["口干伴眼干", "反复龋齿", "关节痛"], "related_symptoms": ["口干"], "recommended_exams": ["唾液流率", "自身抗体", "口腔检查"], "reference_ids": ["ref_local_drymouth_2025"]},
+        {"name": "药物性或功能性口干", "category": "药物/功能性", "base_score": 58, "clues": ["近期新用药", "焦虑睡眠差", "口干但客观分泌可能正常"], "related_symptoms": ["口干", "口臭"], "recommended_exams": ["用药史评估", "口腔检查"], "reference_ids": ["ref_local_drymouth_2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "drymouth_pattern", "question": "口干更接近哪种情况？", "input_type": "single", "options": ["全天明显", "夜间明显", "进食时明显", "说不清"], "purpose": "明确模式"},
+        {"round": 2, "question_id": "drymouth_assoc", "question": "是否伴眼干、龋齿增多或近期新用药？", "input_type": "multiple", "options": ["没有", "眼干", "龋齿增多", "新用药"], "purpose": "寻找病因"},
+        {"round": 3, "question_id": "drymouth_redflag", "question": "是否伴体重下降、腮腺肿大或吞咽困难？", "input_type": "multiple", "options": ["没有", "体重下降", "腮腺肿大", "吞咽困难"], "purpose": "识别高危情况"},
+        {"round": 4, "question_id": "drymouth_exam", "question": "口腔检查更接近哪种发现？", "input_type": "single", "options": ["口腔黏膜干燥", "齿龈问题明显", "腮腺肿大", "暂无查体"], "purpose": "补充查体"},
+        {"round": 5, "question_id": "drymouth_test", "question": "是否已有唾液流率或自身抗体结果？", "input_type": "multiple", "options": ["暂无", "唾液流率低", "自身抗体阳性"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "drymouth_plan", "question": "下一步更适合？", "input_type": "single", "options": ["口腔/风湿评估", "调整药物", "对症润口并随访", "转诊"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "口臭",
+      "aliases": ["嘴巴异味"],
+      "body_parts": ["口腔", "胃食管"],
+      "activity_limitations": ["社交受限"],
+      "common_diseases": [
+        {"name": "牙周病或舌苔相关口臭", "category": "口腔科", "base_score": 60, "clues": ["刷牙后仍明显", "牙龈出血", "口腔卫生差"], "related_symptoms": ["口臭"], "recommended_exams": ["口腔检查"], "reference_ids": ["ref_local_drymouth_2025"]},
+        {"name": "胃食管反流病", "category": "消化系统", "base_score": 57, "clues": ["口臭伴返酸", "晨起明显", "餐后加重"], "related_symptoms": ["口臭", "返酸"], "recommended_exams": ["反流症状评估", "必要时胃镜"], "reference_ids": ["ref_nice_gord_cg184", "ref_local_drymouth_2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "halitosis_time", "question": "口臭在什么情况下最明显？", "input_type": "single", "options": ["晨起", "全天", "餐后", "说不清"], "purpose": "初步定位原因"},
+        {"round": 2, "question_id": "halitosis_assoc", "question": "是否伴牙龈出血、口干或返酸？", "input_type": "multiple", "options": ["没有", "牙龈出血", "口干", "返酸"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "halitosis_redflag", "question": "是否伴进行性吞咽困难、消瘦或黑便？", "input_type": "multiple", "options": ["没有", "吞咽困难", "消瘦", "黑便"], "purpose": "识别报警症状"},
+        {"round": 4, "question_id": "halitosis_exam", "question": "口腔和咽部查体有无异常？", "input_type": "single", "options": ["暂无", "牙周问题", "舌苔厚", "咽部异常"], "purpose": "补充查体"},
+        {"round": 5, "question_id": "halitosis_test", "question": "是否已有口腔检查或消化道评估结果？", "input_type": "multiple", "options": ["暂无", "口腔病变", "反流提示", "胃镜异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "halitosis_plan", "question": "下一步更需要？", "input_type": "single", "options": ["口腔治疗", "按反流管理", "转诊胃镜评估", "随访"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "心悸",
+      "aliases": ["心慌", "心跳快"],
+      "body_parts": ["心前区"],
+      "activity_limitations": ["活动受限", "焦虑不安"],
+      "common_diseases": [
+        {"name": "心律失常", "category": "心血管系统", "base_score": 70, "clues": ["突发心跳快或不齐", "伴头晕", "发作性"], "related_symptoms": ["心悸", "头晕"], "recommended_exams": ["心电图", "电解质", "甲功"], "reference_ids": ["ref_nice_chest_pain_cg95"]},
+        {"name": "甲状腺功能亢进", "category": "内分泌系统", "base_score": 58, "clues": ["心悸伴消瘦", "怕热多汗", "手抖"], "related_symptoms": ["心悸", "消瘦"], "recommended_exams": ["TSH", "FT3/FT4"], "reference_ids": ["ref_local_emaciation_2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "palp_pattern", "question": "心悸是突然发作还是持续存在？", "input_type": "single", "options": ["突然发作", "持续存在", "偶尔跳快", "说不清"], "purpose": "识别心律失常模式"},
+        {"round": 2, "question_id": "palp_assoc", "question": "是否伴头晕、胸痛、出汗或消瘦？", "input_type": "multiple", "options": ["没有", "头晕", "胸痛", "出汗", "消瘦"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "palp_redflag", "question": "是否伴晕厥、持续胸痛或血压下降？", "input_type": "multiple", "options": ["没有", "晕厥", "持续胸痛", "血压下降"], "purpose": "排查急症"},
+        {"round": 4, "question_id": "palp_exam", "question": "脉搏和血压最主要的异常是什么？", "input_type": "single", "options": ["脉快", "脉不齐", "血压高", "暂无监测"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "palp_test", "question": "是否已有心电图、电解质或甲功结果？", "input_type": "multiple", "options": ["暂无", "心电图异常", "电解质异常", "甲功异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "palp_plan", "question": "下一步更适合？", "input_type": "single", "options": ["门诊心电图", "急诊处理", "筛查甲状腺", "随访"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "头晕",
+      "aliases": ["眩晕", "晕乎"],
+      "body_parts": ["头部", "前庭系统"],
+      "activity_limitations": ["行走不稳", "站立困难"],
+      "common_diseases": [
+        {"name": "前庭性眩晕", "category": "耳鼻喉科", "base_score": 61, "clues": ["旋转感", "体位变化诱发", "伴恶心"], "related_symptoms": ["头晕", "耳鸣"], "recommended_exams": ["血压", "神经系统查体", "耳鼻喉评估"], "reference_ids": ["ref_medrag_www2025"]},
+        {"name": "贫血或低血压相关头晕", "category": "全身性", "base_score": 58, "clues": ["站起时明显", "乏力", "面色差"], "related_symptoms": ["头晕", "乏力"], "recommended_exams": ["卧立位血压", "血常规"], "reference_ids": ["ref_local_fatigue_2024", "ref_aafp_fatigue_2023"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "dizzy_type", "question": "头晕更像哪种感觉？", "input_type": "single", "options": ["旋转感", "站起发黑", "飘忽不稳", "说不清"], "purpose": "分型头晕"},
+        {"round": 2, "question_id": "dizzy_assoc", "question": "是否伴耳鸣、恶心、心悸或乏力？", "input_type": "multiple", "options": ["没有", "耳鸣", "恶心", "心悸", "乏力"], "purpose": "定位病因"},
+        {"round": 3, "question_id": "dizzy_redflag", "question": "是否伴言语不清、单侧无力或进行性加重？", "input_type": "multiple", "options": ["没有", "言语不清", "单侧无力", "进行性加重"], "purpose": "排查中枢性病变"},
+        {"round": 4, "question_id": "dizzy_exam", "question": "血压或神经查体有无异常？", "input_type": "single", "options": ["暂无", "血压低", "眼震", "神经定位体征"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "dizzy_test", "question": "是否已有血常规、血糖或影像结果？", "input_type": "multiple", "options": ["暂无", "血常规异常", "血糖异常", "影像异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "dizzy_plan", "question": "下一步更适合？", "input_type": "single", "options": ["门诊评估", "急诊卒中排查", "耳鼻喉检查", "随访"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "头痛",
+      "aliases": ["头疼"],
+      "body_parts": ["头部"],
+      "activity_limitations": ["工作受限", "怕光怕声"],
+      "common_diseases": [
+        {"name": "偏头痛", "category": "神经系统", "base_score": 64, "clues": ["单侧搏动样", "恶心畏光", "活动后加重"], "related_symptoms": ["头痛"], "recommended_exams": ["神经系统查体"], "reference_ids": ["ref_medrag_www2025"]},
+        {"name": "紧张型头痛", "category": "神经系统", "base_score": 58, "clues": ["双侧压迫样", "压力睡眠差相关", "无明显神经定位体征"], "related_symptoms": ["头痛", "乏力"], "recommended_exams": ["血压", "神经系统查体"], "reference_ids": ["ref_aafp_fatigue_2023"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "headache_pattern", "question": "头痛更接近哪种性质？", "input_type": "single", "options": ["搏动样", "压迫样", "针刺样", "最剧烈"], "purpose": "初步分型"},
+        {"round": 2, "question_id": "headache_assoc", "question": "是否伴恶心、畏光、发热或颈项不适？", "input_type": "multiple", "options": ["没有", "恶心", "畏光", "发热", "颈项不适"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "headache_redflag", "question": "是否为突发最严重头痛或伴神经功能缺损？", "input_type": "multiple", "options": ["没有", "突发最严重", "肢体无力", "意识改变"], "purpose": "排查红旗征"},
+        {"round": 4, "question_id": "headache_exam", "question": "血压或神经查体有无异常？", "input_type": "single", "options": ["暂无", "血压高", "脑膜刺激征", "神经定位体征"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "headache_test", "question": "是否已有头颅影像或炎症检查结果？", "input_type": "multiple", "options": ["暂无", "头颅影像异常", "炎症指标高"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "headache_plan", "question": "下一步更适合？", "input_type": "single", "options": ["按原发性头痛管理", "急诊影像评估", "完善血压监测", "转神经专科"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "腹胀",
+      "aliases": ["肚子胀"],
+      "body_parts": ["腹部"],
+      "activity_limitations": ["进食减少", "活动不适"],
+      "common_diseases": [
+        {"name": "功能性消化不良或胃肠胀气", "category": "消化系统", "base_score": 59, "clues": ["餐后加重", "嗳气", "排气后缓解"], "related_symptoms": ["腹胀", "返酸"], "recommended_exams": ["腹部查体", "必要时腹部超声"], "reference_ids": ["ref_nice_gord_cg184"]},
+        {"name": "肝病或腹水相关腹胀", "category": "消化系统", "base_score": 63, "clues": ["进行性腹胀", "下肢水肿", "食欲下降"], "related_symptoms": ["腹胀", "水肿"], "recommended_exams": ["腹部超声", "肝功能"], "reference_ids": ["ref_local_edema_2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "bloat_time", "question": "腹胀更容易在何时加重？", "input_type": "single", "options": ["餐后", "全天", "晚上", "说不清"], "purpose": "识别功能性与器质性线索"},
+        {"round": 2, "question_id": "bloat_assoc", "question": "是否伴返酸、便秘、腹泻或水肿？", "input_type": "multiple", "options": ["没有", "返酸", "便秘", "腹泻", "水肿"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "bloat_redflag", "question": "是否伴体重下降、黑便便血或持续呕吐？", "input_type": "multiple", "options": ["没有", "体重下降", "黑便便血", "持续呕吐"], "purpose": "识别报警症状"},
+        {"round": 4, "question_id": "bloat_exam", "question": "腹部查体更接近哪种情况？", "input_type": "single", "options": ["柔软无压痛", "上腹压痛", "移动性浊音", "暂无查体"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "bloat_test", "question": "是否已有腹部超声、肝功能或粪便检查？", "input_type": "multiple", "options": ["暂无", "腹部超声异常", "肝功能异常", "粪便异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "bloat_plan", "question": "下一步更适合？", "input_type": "single", "options": ["生活方式管理", "完善腹部检查", "消化专科转诊", "急诊评估"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "腹痛",
+      "aliases": ["肚子痛", "胃痛"],
+      "body_parts": ["上腹", "下腹", "右上腹", "右下腹"],
+      "activity_limitations": ["影响进食", "影响行走"],
+      "common_diseases": [
+        {"name": "胃炎或消化性溃疡", "category": "消化系统", "base_score": 60, "clues": ["上腹痛", "餐后或空腹相关", "伴返酸嗳气"], "related_symptoms": ["腹痛", "返酸"], "recommended_exams": ["腹部查体", "必要时胃镜"], "reference_ids": ["ref_nice_gord_cg184"]},
+        {"name": "急腹症待排", "category": "外科/急诊", "base_score": 72, "clues": ["突发剧烈腹痛", "反跳痛", "持续呕吐或黑便"], "related_symptoms": ["腹痛", "发热"], "recommended_exams": ["腹部查体", "血常规", "腹部影像"], "reference_ids": ["ref_nice_gord_cg184"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "abpain_site", "question": "腹痛主要位于哪里？", "input_type": "single", "options": ["上腹", "脐周", "右下腹", "全腹"], "purpose": "定位病变"},
+        {"round": 2, "question_id": "abpain_assoc", "question": "是否伴返酸、腹泻、发热或呕吐？", "input_type": "multiple", "options": ["没有", "返酸", "腹泻", "发热", "呕吐"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "abpain_redflag", "question": "是否出现反跳痛、黑便便血或持续不能进食？", "input_type": "multiple", "options": ["没有", "反跳痛", "黑便便血", "不能进食"], "purpose": "排查急腹症"},
+        {"round": 4, "question_id": "abpain_exam", "question": "腹部查体最主要发现是什么？", "input_type": "single", "options": ["局部压痛", "肌紧张", "肠鸣音异常", "暂无查体"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "abpain_test", "question": "是否已有血常规、腹部超声或胃镜结果？", "input_type": "multiple", "options": ["暂无", "血常规异常", "超声异常", "胃镜异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "abpain_plan", "question": "当前更适合？", "input_type": "single", "options": ["按消化病处理", "完善腹部影像", "急诊评估", "转消化专科"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "胸闷",
+      "aliases": ["胸口闷"],
+      "body_parts": ["胸部"],
+      "activity_limitations": ["活动后加重", "平卧不适"],
+      "common_diseases": [
+        {"name": "冠心病或心肌缺血", "category": "心血管系统", "base_score": 69, "clues": ["活动后胸闷", "休息缓解", "伴胸痛或气短"], "related_symptoms": ["胸闷", "胸痛"], "recommended_exams": ["心电图", "血压", "心肌标志物（如可及）"], "reference_ids": ["ref_nice_chest_pain_cg95"]},
+        {"name": "焦虑相关过度换气", "category": "精神心理", "base_score": 52, "clues": ["情绪诱发", "伴手足麻木", "客观检查相对轻"], "related_symptoms": ["胸闷", "麻木"], "recommended_exams": ["心电图", "生命体征"], "reference_ids": ["ref_medrag_www2025"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "chesttight_trigger", "question": "胸闷更容易在什么情况下出现？", "input_type": "single", "options": ["活动后", "静息时", "情绪紧张时", "平卧时"], "purpose": "区分心肺与心理因素"},
+        {"round": 2, "question_id": "chesttight_assoc", "question": "是否伴胸痛、气短、心悸或手足麻木？", "input_type": "multiple", "options": ["没有", "胸痛", "气短", "心悸", "手足麻木"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "chesttight_redflag", "question": "是否伴大汗、持续不缓解或血氧下降？", "input_type": "multiple", "options": ["没有", "大汗", "持续不缓解", "血氧下降"], "purpose": "识别急症"},
+        {"round": 4, "question_id": "chesttight_exam", "question": "心肺查体或血压最主要异常是什么？", "input_type": "single", "options": ["心率快", "血压异常", "肺部啰音", "暂无查体"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "chesttight_test", "question": "是否已有心电图、胸片或心肌酶结果？", "input_type": "multiple", "options": ["暂无", "心电图异常", "胸片异常", "心肌酶异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "chesttight_plan", "question": "下一步更适合？", "input_type": "single", "options": ["急诊心血管评估", "门诊进一步检查", "按焦虑管理并复诊", "转诊"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "胸痛",
+      "aliases": ["胸口痛", "心口痛"],
+      "body_parts": ["胸前区", "胸骨后"],
+      "activity_limitations": ["活动受限", "不敢深呼吸"],
+      "common_diseases": [
+        {"name": "急性冠脉综合征待排", "category": "心血管系统", "base_score": 78, "clues": ["胸骨后压榨痛", "活动或情绪后出现", "伴大汗恶心"], "related_symptoms": ["胸痛", "胸闷"], "recommended_exams": ["心电图", "血压", "心肌标志物"], "reference_ids": ["ref_nice_chest_pain_cg95"]},
+        {"name": "胃食管反流病", "category": "消化系统", "base_score": 54, "clues": ["烧灼样胸痛", "餐后或平卧加重", "返酸"], "related_symptoms": ["胸痛", "返酸"], "recommended_exams": ["反流症状评估", "必要时胃镜"], "reference_ids": ["ref_nice_gord_cg184", "ref_nice_chest_pain_cg95"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "chestpain_character", "question": "胸痛更接近哪种性质？", "input_type": "single", "options": ["压榨样", "烧灼样", "针刺样", "呼吸时加重"], "purpose": "初步分型"},
+        {"round": 2, "question_id": "chestpain_assoc", "question": "是否伴大汗、恶心、返酸或气短？", "input_type": "multiple", "options": ["没有", "大汗", "恶心", "返酸", "气短"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "chestpain_redflag", "question": "胸痛是否持续超过 15 分钟或伴晕厥？", "input_type": "multiple", "options": ["没有", "持续超过15分钟", "晕厥", "血压下降"], "purpose": "识别高危胸痛"},
+        {"round": 4, "question_id": "chestpain_exam", "question": "生命体征或心肺查体有无异常？", "input_type": "single", "options": ["暂无", "血压异常", "心率异常", "肺部异常"], "purpose": "补充体征"},
+        {"round": 5, "question_id": "chestpain_test", "question": "是否已有心电图、心肌酶或胸片结果？", "input_type": "multiple", "options": ["暂无", "心电图异常", "心肌酶异常", "胸片异常"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "chestpain_plan", "question": "当前处置更适合？", "input_type": "single", "options": ["立即急诊处理", "尽快完善心血管检查", "按反流评估", "门诊复评"], "purpose": "形成方案"}
+      ]
+    },
+    {
+      "name": "返酸",
+      "aliases": ["烧心", "反胃酸"],
+      "body_parts": ["胸骨后", "上腹部"],
+      "activity_limitations": ["夜间影响睡眠", "餐后不适"],
+      "common_diseases": [
+        {"name": "胃食管反流病", "category": "消化系统", "base_score": 68, "clues": ["餐后或平卧返酸", "胸骨后烧灼感", "夜间明显"], "related_symptoms": ["返酸", "口臭", "腹痛"], "recommended_exams": ["报警症状评估", "必要时胃镜"], "reference_ids": ["ref_nice_gord_cg184"]},
+        {"name": "功能性消化不良", "category": "消化系统", "base_score": 56, "clues": ["上腹胀满", "餐后不适", "检查常无明显器质性异常"], "related_symptoms": ["返酸", "腹胀"], "recommended_exams": ["症状评估", "必要时幽门螺杆菌检测"], "reference_ids": ["ref_nice_gord_cg184"]}
+      ],
+      "question_bank": [
+        {"round": 1, "question_id": "reflux_pattern", "question": "返酸更容易在什么情况下出现？", "input_type": "single", "options": ["餐后", "夜间平卧", "空腹", "全天"], "purpose": "明确模式"},
+        {"round": 2, "question_id": "reflux_assoc", "question": "是否伴上腹痛、口臭、吞咽不适或咳嗽？", "input_type": "multiple", "options": ["没有", "上腹痛", "口臭", "吞咽不适", "咳嗽"], "purpose": "细化病因"},
+        {"round": 3, "question_id": "reflux_redflag", "question": "是否伴消瘦、黑便便血或进行性吞咽困难？", "input_type": "multiple", "options": ["没有", "消瘦", "黑便便血", "吞咽困难"], "purpose": "识别报警症状"},
+        {"round": 4, "question_id": "reflux_exam", "question": "腹部和口咽查体有无异常？", "input_type": "single", "options": ["暂无", "上腹压痛", "口咽刺激征", "体重下降明显"], "purpose": "补充查体"},
+        {"round": 5, "question_id": "reflux_test", "question": "是否已有胃镜、幽门螺杆菌或粪便潜血结果？", "input_type": "multiple", "options": ["暂无", "胃镜异常", "幽门螺杆菌阳性", "潜血阳性"], "purpose": "整合检查"},
+        {"round": 6, "question_id": "reflux_plan", "question": "下一步更适合？", "input_type": "single", "options": ["经验治疗并随访", "完善胃镜评估", "消化专科转诊", "急诊处理"], "purpose": "形成方案"}
+      ]
+    }
+  ]
+}

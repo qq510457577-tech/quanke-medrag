@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ref_nice_chest_pain_cg95",
+    "title": "Chest pain of recent onset: assessment and diagnosis",
+    "source": "NICE CG95",
+    "source_url": "https://www.nice.org.uk/guidance/cg95",
+    "source_type": "web_guideline",
+    "related_topics": ["胸痛", "胸闷", "心悸"],
+    "summary": "NICE 对近期新发胸痛的评估与诊断提出分层路径，强调先排除急危重心血管事件。",
+    "evidence_paragraphs": [
+      {
+        "label": "风险分层",
+        "text": "对于近期新发胸痛，应优先识别需要紧急处理的缺血性胸痛和其他危及生命的胸痛原因，再决定进一步检查路径。",
+        "highlights": ["近期新发胸痛", "紧急处理", "危及生命"]
+      }
+    ]
+  },
+  {
+    "id": "ref_nice_gord_cg184",
+    "title": "Gastro-oesophageal reflux disease and dyspepsia in adults: investigation and management",
+    "source": "NICE CG184",
+    "source_url": "https://www.nice.org.uk/guidance/cg184",
+    "source_type": "web_guideline",
+    "related_topics": ["返酸", "腹痛", "口臭"],
+    "summary": "NICE 成人胃食管反流和消化不良指南强调根据报警症状、年龄与病程决定经验治疗还是进一步检查。",
+    "evidence_paragraphs": [
+      {
+        "label": "报警症状",
+        "text": "在返酸、上腹不适等表现中，需要先识别吞咽困难、消瘦、消化道出血等报警症状，以决定是否优先转诊或胃镜评估。",
+        "highlights": ["返酸", "吞咽困难", "消瘦", "消化道出血"]
+      }
+    ]
+  },
+  {
+    "id": "ref_aafp_fatigue_2023",
+    "title": "Fatigue in Adults: Evaluation and Management",
+    "source": "American Family Physician",
+    "source_url": "https://www.aafp.org/pubs/afp/issues/2023/0700/fatigue-adults.html",
+    "source_type": "web_guideline",
+    "related_topics": ["乏力", "头晕", "心悸"],
+    "summary": "AAFP 从家庭医学视角总结成人乏力的常见病因、基础检查与管理路径，适合基层初诊场景。",
+    "evidence_paragraphs": [
+      {
+        "label": "基层评估",
+        "text": "乏力评估需要先通过病史、睡眠、心理状态、药物史和基础实验室检查寻找常见可逆原因，再考虑少见病因。",
+        "highlights": ["病史", "睡眠", "心理状态", "药物史", "基础实验室检查"]
+      }
+    ]
+  },
+  {
+    "id": "ref_medrag_www2025",
+    "title": "MedRAG: Enhancing Retrieval-augmented Generation with Knowledge Graph-Elicited Reasoning for Healthcare Copilot",
+    "source": "Official MedRAG GitHub / WWW 2025 paper",
+    "source_url": "https://github.com/SNOWTEAM2023/MedRAG",
+    "source_type": "methodology",
+    "related_topics": ["方法学", "全科辅助诊断"],
+    "summary": "官方 MedRAG 提出知识图谱构建、图谱引导检索和追问生成三段式方法，是本项目当前知识层重构的直接参考。",
+    "evidence_paragraphs": [
+      {
+        "label": "核心设计",
+        "text": "MedRAG 的核心是用知识图谱引导检索增强生成，并主动生成追问，以提升复杂相似疾病之间的区分能力。",
+        "highlights": ["知识图谱", "检索增强生成", "主动生成追问", "区分相似疾病"]
+      }
+    ]
+  }
+]
