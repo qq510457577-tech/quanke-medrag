@@ -966,7 +966,6 @@
             // 获取下一轮问题或完成诊断
             if (!isDiagnosisClear.value && data.next_round_questions && data.next_round_questions.length > 0 && currentRound.value < maxRounds.value) {
               currentQuestions.value = data.next_round_questions;
-              currentRound.value++;
               
               // 初始化新问题答案
               currentQuestions.value.forEach(q => {

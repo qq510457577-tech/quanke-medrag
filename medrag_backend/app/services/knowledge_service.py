@@ -18,6 +18,51 @@ ROUND_FOCUS = {
     6: "诊断收敛与处置建议",
 }
 
+FALLBACK_QUESTIONS = {
+    1: {
+        "question_id": "general_onset_pattern",
+        "question": "症状最早何时出现，近期是加重、缓解还是反复？",
+        "input_type": "single",
+        "options": ["急性出现并加重", "逐渐加重", "反复发作", "基本稳定"],
+        "purpose": "补全病程与演变特征",
+    },
+    2: {
+        "question_id": "general_trigger_context",
+        "question": "症状是否与活动、体位、进食、睡眠或近期用药有关？",
+        "input_type": "multiple",
+        "options": ["无明显关系", "活动相关", "体位相关", "进食相关", "夜间加重", "近期新用药"],
+        "purpose": "补全诱因、暴露和伴随线索",
+    },
+    3: {
+        "question_id": "general_red_flags",
+        "question": "是否出现呼吸困难、意识异常、持续剧痛、晕厥、严重出血或症状快速进展？",
+        "input_type": "multiple",
+        "options": ["均无", "呼吸困难", "意识异常", "持续剧痛", "晕厥", "严重出血", "快速进展"],
+        "purpose": "完成红旗征筛查与紧急分流",
+    },
+    4: {
+        "question_id": "general_vitals_exam",
+        "question": "目前是否已有体温、脉搏、血压、血氧或相关查体结果？",
+        "input_type": "multiple",
+        "options": ["暂无", "体温异常", "脉搏异常", "血压异常", "血氧异常", "查体有阳性发现"],
+        "purpose": "整合生命体征与查体信息",
+    },
+    5: {
+        "question_id": "general_tests",
+        "question": "是否已有化验、心电图、超声、影像或其他辅助检查结果？",
+        "input_type": "multiple",
+        "options": ["暂无检查", "化验异常", "心电图异常", "超声异常", "影像异常", "结果不清楚"],
+        "purpose": "整合辅助检查并缩小鉴别诊断",
+    },
+    6: {
+        "question_id": "general_disposition",
+        "question": "过去 24-48 小时症状趋势如何，当前最需要哪种处置？",
+        "input_type": "single",
+        "options": ["明显加重需尽快就医", "仍有不适需门诊复评", "基本稳定可短期随访", "不确定"],
+        "purpose": "完成处置分层和随访计划",
+    },
+}
+
 EMERGENCY_HINTS = {
     "胸痛": "胸痛需警惕急性冠脉综合征、主动脉夹层、肺栓塞等急症。",
     "胸闷": "胸闷伴呼吸困难或活动后明显加重时需优先排查心肺高危疾病。",
@@ -116,7 +161,19 @@ class KnowledgeService:
                 )
                 if len(questions) == 3:
                     return questions
-        return questions
+        if questions:
+            return questions
+
+        fallback = FALLBACK_QUESTIONS[round_index]
+        target_disease = candidates[0]["disease"] if candidates else "待明确"
+        return [
+            {
+                **fallback,
+                "target_symptom": "未分化症状",
+                "target_disease": target_disease,
+                "clinical_intent": ROUND_FOCUS[round_index],
+            }
+        ]
 
     def summarize_reasoning(self, symptoms: List[Symptom], answers: List[FollowUpAnswer], candidates: List[Dict]) -> str:
         symptom_summary = "、".join(item.description for item in symptoms[:3])

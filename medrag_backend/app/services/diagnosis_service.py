@@ -12,6 +12,9 @@ from .retrieval_service import LocalVectorRetriever
 from .session_store import SessionStore
 
 
+MIN_COMPLETED_QUESTION_ROUNDS = 4
+
+
 class DiagnosisService:
     def __init__(self) -> None:
         self.sessions = SessionStore()
@@ -55,11 +58,13 @@ class DiagnosisService:
         return f"{symptom_text} {answer_text} {candidate_text} 基层全科 指南 诊断 依据"
 
     @staticmethod
-    def _is_diagnosis_clear(candidates: List[Dict[str, Any]], round_index: int, max_rounds: int) -> bool:
-        """Stop early only after a clinically meaningful evidence lead is established."""
-        if round_index >= max_rounds:
+    def _is_diagnosis_clear(
+        candidates: List[Dict[str, Any]], completed_rounds: int, max_rounds: int
+    ) -> bool:
+        """End only after four completed clinical question rounds and a clear evidence lead."""
+        if completed_rounds >= max_rounds:
             return True
-        if round_index < 2 or not candidates:
+        if completed_rounds < MIN_COMPLETED_QUESTION_ROUNDS or not candidates:
             return False
 
         top_score = int(candidates[0].get("confidence", 0))
@@ -131,14 +136,15 @@ class DiagnosisService:
                 }
             )
 
-        next_round = min(session.round_count + 1, session.max_rounds)
+        completed_rounds = session.round_count
+        next_round = min(completed_rounds + 1, session.max_rounds)
         typed_answers = [FollowUpAnswer(**item) for item in session.all_answers]
         raw_candidates = self.knowledge.infer_candidates(session.symptoms, typed_answers)
         candidates = self._attach_references(raw_candidates)
         session.diagnosis_hypothesis = candidates
         session.round_count = next_round
         session.stage_label = ROUND_FOCUS[next_round]
-        is_clear = self._is_diagnosis_clear(raw_candidates, next_round, session.max_rounds)
+        is_clear = self._is_diagnosis_clear(raw_candidates, completed_rounds, session.max_rounds)
         session.is_diagnosis_clear = is_clear
         next_questions = [] if is_clear else self.knowledge.build_questions(session.symptoms, next_round, raw_candidates)
         session.current_questions = next_questions
@@ -161,6 +167,7 @@ class DiagnosisService:
             "session_id": session.session_id,
             "diagnosis_updates": updates,
             "is_diagnosis_clear": is_clear,
+            "completed_rounds": completed_rounds,
             "round_count": session.round_count,
             "max_rounds": session.max_rounds,
             "risk_stratification": "建议尽快完善检查" if session.is_emergency else "继续追问",
