@@ -2,292 +2,15 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#087f70">
   <title>全科医生辅助诊断系统 - LLM临床思维链版</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { -webkit-text-size-adjust: 100%; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a5276 0%, #2874a6 50%, #1a5276 100%); min-height: 100vh; color: #333; overflow-x: hidden; }
-    button, input, select, textarea { font: inherit; }
-    .app-container { min-height: 100vh; display: flex; flex-direction: column; }
-    .app-header { background: rgba(255,255,255,0.95); padding: 16px 20px; box-shadow: 0 2px 20px rgba(0,0,0,0.15); }
-    .header-content { max-width: 900px; margin: 0 auto; }
-    .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 6px; }
-    .logo-text { font-size: 24px; font-weight: 700; color: #1a5276; }
-    .header-subtitle { text-align: center; font-size: 15px; color: #666; }
-    .main-content { flex: 1; max-width: 900px; width: 100%; margin: 0 auto; padding: 24px 16px; }
-    
-    /* 步骤指示器 */
-    .steps-container { margin-bottom: 20px; }
-    .steps-track { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 16px; }
-    .step-item { display: flex; align-items: center; }
-    .step-node { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; border: 2px solid rgba(255,255,255,0.4); transition: all 0.3s; }
-    .step-item.active .step-node { background: #fff; color: #1a5276; border-color: #fff; transform: scale(1.15); }
-    .step-item.completed .step-node { background: #27ae60; border-color: #27ae60; }
-    .step-connector { width: 50px; height: 2px; background: rgba(255,255,255,0.3); transition: background 0.3s; }
-    .step-connector.active { background: #27ae60; }
-    .step-labels { display: flex; justify-content: center; gap: 30px; }
-    .step-label { font-size: 12px; color: rgba(255,255,255,0.7); }
-    .step-item.active .step-label { color: #fff; font-weight: 500; }
-    
-    /* 轮次进度条 */
-    .round-progress { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
-    .round-bar { flex: 1; max-width: 300px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
-    .round-fill { height: 100%; background: linear-gradient(90deg, #f39c12, #e74c3c); border-radius: 3px; transition: width 0.5s; }
-    .round-text { color: #fff; font-size: 15px; font-weight: 500; }
-    
-    /* API状态 */
-    .api-status { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 16px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; font-size: 14px; color: rgba(255,255,255,0.9); }
-    .api-dot { width: 8px; height: 8px; border-radius: 50%; background: #27ae60; }
-    .api-dot.error { background: #e74c3c; }
-    .api-dot.loading { background: #f39c12; animation: pulse 1s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    
-    .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 16px; }
-    .card-title { font-size: 21px; font-weight: 600; margin-bottom: 20px; text-align: center; color: #1a5276; }
-    
-    /* 表单样式 */
-    .form-section { margin-bottom: 20px; }
-    .section-title { font-size: 16px; font-weight: 600; color: #444; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .section-icon { color: #1a5276; }
-    .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .form-group { flex: 1; min-width: 120px; margin-bottom: 12px; }
-    .form-label { display: block; font-size: 14px; color: #666; margin-bottom: 5px; }
-    .form-label.required::after { content: ' *'; color: #e74c3c; }
-    .form-input, .form-select { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; }
-    .form-input:focus, .form-select:focus { outline: none; border-color: #1a5276; }
-    .form-input.error, .form-select.error { border-color: #e74c3c; }
-    .error-text { color: #e74c3c; font-size: 11px; margin-top: 2px; }
-    
-    /* 症状列表 */
-    .symptom-list { display: flex; flex-direction: column; gap: 12px; }
-    .symptom-item { background: #f8f9fa; border-radius: 10px; padding: 14px; position: relative; }
-    .symptom-textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; resize: vertical; min-height: 64px; }
-    .symptom-textarea:focus { outline: none; border-color: #1a5276; }
-    .symptom-textarea.error { border-color: #e74c3c; }
-    .symptom-meta { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
-    .meta-group { flex: 1; min-width: 140px; }
-    .meta-label { font-size: 13px; color: #666; margin-bottom: 5px; display: block; }
-    
-    /* 持续时间选择器 */
-    .duration-picker { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .duration-picker select { padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; min-width: 60px; }
-    .duration-picker select:focus { outline: none; border-color: #1a5276; }
-    .duration-unit { font-size: 13px; color: #888; }
-    
-    /* 严重程度选择器 */
-    .severity-picker { display: flex; gap: 8px; }
-    .severity-btn { min-width: 78px; height: 40px; padding: 0 14px; border-radius: 18px; border: 2px solid #ddd; background: #fff; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; white-space: nowrap; }
-    .severity-btn:hover { transform: scale(1.1); }
-    .severity-btn.active { border-color: #fff; color: #fff; transform: scale(1.15); }
-    .severity-btn[data-level="1"] { background: #d5f5e3; border-color: #d5f5e3; }
-    .severity-btn[data-level="1"].active { background: #27ae60; }
-    .severity-btn[data-level="3"] { background: #f9e79f; border-color: #f9e79f; }
-    .severity-btn[data-level="3"].active { background: #f1c40f; }
-    .severity-btn[data-level="5"] { background: #ec7063; border-color: #ec7063; }
-    .severity-btn[data-level="5"].active { background: #e74c3c; }
-    
-    .btn-remove { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; font-size: 18px; }
-    .btn-remove:hover { color: #e74c3c; }
-    .btn-add { display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: #f0f0f0; border: 2px dashed #ccc; border-radius: 8px; color: #666; cursor: pointer; font-size: 15px; }
-    .btn-add:hover { background: #e8e8e8; }
-    .quick-symptoms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .quick-btn { padding: 8px 14px; background: #e8f4f8; border: 1px solid #b8d4e3; border-radius: 15px; color: #1a5276; font-size: 14px; cursor: pointer; }
-    .quick-btn:hover { background: #1a5276; color: #fff; }
-    
-    /* 主按钮 */
-    .btn-primary { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: linear-gradient(135deg, #1a5276, #2874a6); border: none; border-radius: 10px; color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,82,118,0.4); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-secondary { flex: 1; padding: 12px; background: #f5f5f5; border: none; border-radius: 8px; color: #666; font-size: 14px; cursor: pointer; }
-    .button-group { display: flex; gap: 10px; margin-top: 20px; }
-    .loading-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
-    /* 诊断假设列表 */
-    .hypothesis-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-    .hypothesis-card { background: #fff; border-radius: 10px; padding: 12px; border: 2px solid #e0e0e0; transition: all 0.3s; }
-    .hypothesis-card.primary { border-color: #e74c3c; background: #fff5f5; }
-    .hypothesis-card.secondary { border-color: #f39c12; background: #fffbf0; }
-    .hypothesis-card.tertiary { border-color: #3498db; background: #f0f8ff; }
-    .hypothesis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .hypothesis-name { font-weight: 600; color: #333; font-size: 16px; }
-    .hypothesis-conf { font-size: 16px; font-weight: 700; }
-    .hypothesis-conf.high { color: #e74c3c; }
-    .hypothesis-conf.medium { color: #f39c12; }
-    .hypothesis-conf.low { color: #3498db; }
-    .support-score-note { margin: 0 0 12px; color: #667085; font-size: 14px; line-height: 1.5; }
-    .hypothesis-reason { font-size: 14px; color: #666; margin-top: 6px; }
-    .hypothesis-category { font-size: 12px; color: #999; background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
-    
-    /* 临床思维链 */
-    .reasoning-box { background: #f8f9fa; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #1a5276; }
-    .reasoning-title { font-size: 16px; font-weight: 600; color: #1a5276; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-    .reasoning-content { font-size: 15px; color: #555; line-height: 1.65; white-space: pre-wrap; }
-    
-    /* 追问问题 */
-    .questions-list { display: flex; flex-direction: column; gap: 16px; }
-    .question-card { background: #f8f9fa; border-radius: 10px; padding: 16px; border: 1px solid #e0e0e0; }
-    .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-    .question-text { font-size: 16px; color: #333; font-weight: 500; flex: 1; }
-    .question-target { font-size: 12px; color: #1a5276; background: #e8f4f8; padding: 2px 6px; border-radius: 3px; }
-    .question-prompt { font-size: 13px; color: #888; margin-bottom: 10px; font-style: italic; }
-    
-    /* 回答选项 */
-    .answer-options { display: flex; flex-wrap: wrap; gap: 8px; }
-    .option-btn { padding: 9px 16px; border: 2px solid #ddd; border-radius: 20px; background: #fff; cursor: pointer; font-size: 15px; transition: all 0.2s; }
-    .option-btn:hover { border-color: #1a5276; background: #e8f4f8; }
-    .option-btn.selected { border-color: #1a5276; background: #1a5276; color: #fff; }
-    .yesno-btns { display: flex; gap: 12px; }
-    .yesno-btn { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s; }
-    .yesno-btn:hover { border-color: #1a5276; }
-    .yesno-btn.yes.selected { border-color: #27ae60; background: #27ae60; color: #fff; }
-    .yesno-btn.no.selected { border-color: #e74c3c; background: #e74c3c; color: #fff; }
-    
-    /* 最终诊断 */
-    .final-diagnosis { display: flex; flex-direction: column; gap: 16px; }
-    .diagnosis-card { background: #fff; border-radius: 12px; padding: 20px; border: 2px solid #e0e0e0; }
-    .diagnosis-card.main { border-color: #e74c3c; background: linear-gradient(135deg, #fff5f5, #fff); }
-    .diagnosis-card.secondary { border-color: #3498db; background: linear-gradient(135deg, #f0f8ff, #fff); }
-    .diagnosis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .diagnosis-name { font-size: 20px; font-weight: 700; color: #333; }
-    .diagnosis-confidence { font-size: 24px; font-weight: 700; }
-    .diagnosis-confidence.high { color: #e74c3c; }
-    .diagnosis-confidence.medium { color: #f39c12; }
-    .diagnosis-confidence.low { color: #3498db; }
-    .diagnosis-type { font-size: 14px; padding: 4px 10px; border-radius: 15px; background: #1a5276; color: #fff; }
-    .diagnosis-reason { font-size: 15px; color: #555; line-height: 1.65; margin: 12px 0; }
-    .diagnosis-evidence { background: #f8f9fa; border-radius: 8px; padding: 12px; margin: 12px 0; }
-    .evidence-title { font-size: 14px; font-weight: 600; color: #1a5276; margin-bottom: 8px; }
-    .evidence-list { list-style: none; padding: 0; }
-    .evidence-list li { font-size: 14px; color: #666; padding: 4px 0; padding-left: 16px; position: relative; }
-    .evidence-list li::before { content: '•'; position: absolute; left: 0; color: #1a5276; }
-    
-    /* 参考文献 */
-    .references-section { margin-top: 16px; }
-    .ref-item { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid #e0e0e0; }
-    .ref-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .ref-title { font-size: 13px; font-weight: 600; color: #1a5276; }
-    .ref-toggle { font-size: 12px; color: #888; }
-    .ref-content { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #555; line-height: 1.6; }
-    .ref-content.expanded { display: block; }
-    .ref-content .highlight { background: #ffebee; color: #c62828; padding: 2px 4px; border-radius: 2px; font-weight: 500; }
-    .guideline-reference { font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; border: 0; border-top: 1px solid #d8e1e8; border-radius: 0; padding: 12px 0; background: transparent; }
-    .guideline-reference summary { cursor: pointer; font-weight: 600; color: #1a5276; min-height: 44px; }
-    .guideline-meta, .guideline-status { color: #59636e; font-size: 14px; line-height: 1.6; margin: 8px 0; }
-    .guideline-quote { margin: 10px 0; padding-left: 12px; border-left: 3px solid #c62828; }
-    .guideline-match { color: #b42318; background: #fff0ef; font-weight: 600; }
-    .guideline-reference p { margin: 8px 0; }
-    .guideline-source { display: inline-block; padding: 8px 0; color: #185f86; text-decoration: underline; }
-    
-    /* 建议 */
-    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    .suggestion-tag { font-size: 11px; padding: 4px 10px; background: #e8f4f8; color: #1a5276; border-radius: 15px; border: 1px solid #b8d4e3; }
-    
-    /* 进度提示 */
-    .progress-info { text-align: center; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 12px; }
-    .progress-info span { color: #f39c12; font-weight: 600; }
-    
-    /* 动画 */
-    .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-    .fade-enter-from, .fade-leave-to { opacity: 0; }
-    .slide-enter-active, .slide-leave-active { transition: all 0.3s; }
-    .slide-enter-from, .slide-leave-to { transform: translateY(20px); opacity: 0; }
-    
-    /* 加载进度条 */
-    .loading-progress-bar { margin-bottom: 16px; padding: 12px; background: rgba(26, 82, 118, 0.1); border-radius: 8px; }
-    .progress-text { font-size: 13px; color: #1a5276; margin-bottom: 8px; text-align: center; font-weight: 500; }
-    .progress-track { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, #1a5276, #2874a6); border-radius: 3px; transition: width 0.5s ease-out; }
-    .app-footer { max-width: 900px; width: 100%; margin: 0 auto; padding: 0 16px 22px; }
-    .footer-disclaimer { color: rgba(255,255,255,0.82); font-size: 14px; line-height: 1.7; text-align: center; }
-
-    @media (max-width: 640px) {
-      .app-header { padding: 12px 14px; }
-      .logo { justify-content: center; gap: 0; margin-bottom: 4px; text-align: center; }
-      .logo-text { font-size: 20px; line-height: 1.25; }
-      .header-subtitle { text-align: center; font-size: 14px; line-height: 1.45; }
-
-      .main-content { padding: 14px 10px 24px; }
-      .app-footer { padding: 0 14px 18px; }
-      .footer-disclaimer { font-size: 13px; line-height: 1.65; }
-      .steps-container { margin-bottom: 14px; }
-      .steps-track { padding: 0 8px; margin-bottom: 10px; }
-      .step-node { width: 28px; height: 28px; font-size: 12px; }
-      .step-item.active .step-node { transform: none; }
-      .step-connector { width: auto; flex: 1; min-width: 28px; max-width: 72px; }
-      .step-labels { justify-content: space-between; gap: 0; }
-      .step-label { width: 33.333%; text-align: center; font-size: 12px; line-height: 1.3; }
-
-      .round-progress { border-radius: 8px; padding: 10px 12px; gap: 8px; }
-      .round-bar { max-width: none; min-width: 80px; }
-      .round-text { font-size: 14px; white-space: nowrap; }
-      .api-status { padding: 8px 10px; align-items: flex-start; line-height: 1.4; text-align: left; }
-      .api-dot { margin-top: 4px; flex: 0 0 auto; }
-
-      .card { border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.12); }
-       .card-title { font-size: 18px; margin-bottom: 16px; }
-      .form-section { margin-bottom: 16px; }
-      .section-title { align-items: flex-start; line-height: 1.4; }
-      .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-      .form-group { min-width: 0; margin-bottom: 0; }
-      .form-input, .form-select, .symptom-textarea { font-size: 16px; border-radius: 8px; }
-
-      .symptom-list { gap: 10px; }
-      .symptom-item { border-radius: 8px; padding: 12px; }
-      .symptom-meta { display: grid; grid-template-columns: 1fr; gap: 12px; }
-      .meta-group { min-width: 0; }
-      .duration-picker { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 6px; align-items: center; }
-       .duration-picker select { min-width: 0; width: 100%; font-size: 14px; }
-      .severity-picker { justify-content: space-between; gap: 6px; }
-      .severity-btn { flex: 1; min-width: 0; width: auto; height: 40px; padding: 0 8px; }
-      .btn-remove { top: 6px; right: 6px; min-width: 36px; min-height: 36px; }
-      .btn-add { width: 100%; justify-content: center; min-height: 42px; }
-      .quick-symptoms { gap: 8px; }
-      .quick-btn { flex: 1 1 calc(50% - 8px); min-height: 36px; padding: 8px 10px; border-radius: 8px; line-height: 1.3; }
-
-       .btn-primary, .btn-secondary { min-height: 48px; border-radius: 8px; font-size: 16px; }
-      .button-group { flex-direction: column; gap: 8px; }
-
-      .hypothesis-card { border-radius: 8px; padding: 12px; }
-      .hypothesis-header { align-items: flex-start; gap: 8px; }
-      .hypothesis-name { line-height: 1.4; overflow-wrap: anywhere; }
-      .hypothesis-conf { flex: 0 0 auto; }
-      .reasoning-box { border-radius: 8px; padding: 12px; }
-       .reasoning-content { font-size: 14px; overflow-wrap: anywhere; }
-
-      .questions-list { gap: 12px; }
-      .question-card { border-radius: 8px; padding: 12px; }
-      .question-header { flex-direction: column; gap: 8px; }
-      .question-text { width: 100%; line-height: 1.5; overflow-wrap: anywhere; }
-      .answer-options { display: grid; grid-template-columns: 1fr; gap: 8px; }
-      .option-btn { width: 100%; min-height: 42px; border-radius: 8px; padding: 10px 12px; line-height: 1.35; text-align: left; }
-      .yesno-btns { gap: 8px; }
-      .yesno-btn { min-height: 44px; }
-
-      .diagnosis-card { border-radius: 8px; padding: 14px; }
-      .diagnosis-header { flex-direction: column; align-items: flex-start; gap: 6px; }
-       .diagnosis-name { font-size: 18px; line-height: 1.4; overflow-wrap: anywhere; }
-      .diagnosis-confidence { font-size: 20px; }
-      .diagnosis-reason, .ref-content { overflow-wrap: anywhere; }
-      .ref-header { align-items: flex-start; gap: 8px; }
-      .ref-title { line-height: 1.4; overflow-wrap: anywhere; }
-      .suggestion-tag { border-radius: 8px; line-height: 1.35; }
-      .loading-progress-bar { padding: 10px; }
-    }
-
-    @media (max-width: 380px) {
-      .form-row { grid-template-columns: 1fr; }
-      .quick-btn { flex-basis: 100%; }
-      .severity-btn { width: auto; height: 38px; }
-      .logo-text { font-size: 18px; }
-    }
-  </style>
+  <link rel="stylesheet" href="./mobile.css?v=20260922">
 </head>
 <body>
-  <div id="app">
-    <div class="app-container">
+  <div id="app" v-cloak>
+    <div class="app-container" :class="{ 'keyboard-open': keyboardOpen }">
       <!-- 头部 -->
       <header class="app-header">
         <div class="header-content">
@@ -299,6 +22,7 @@
       </header>
       
       <main class="main-content">
+        <div v-if="formError" class="form-error" role="alert" tabindex="-1">{{ formError }}</div>
         <div v-if="emergencyWarning" role="alert" class="reasoning-box" style="border-color: #c62828; color: #9b1c1c; font-size: 17px;">{{ emergencyWarning }}</div>
         <!-- 步骤指示器 -->
         <div class="steps-container">
@@ -331,14 +55,14 @@
         </div>
         
         <!-- API状态 -->
-        <div class="api-status">
+        <div class="api-status" role="status" aria-live="polite">
           <div class="api-dot" :class="apiStatus"></div>
           <span>{{ apiStatusText }}</span>
         </div>
         
         <!-- 步骤1: 收集症状和基础信息 -->
-        <div v-if="currentStep === 1" class="card">
-          <h2 class="card-title">患者信息与症状</h2>
+        <fieldset v-if="currentStep === 1" class="card" :disabled="isLoading" aria-labelledby="patient-heading">
+          <h2 id="patient-heading" class="card-title" tabindex="-1">患者信息与症状</h2>
           
           <!-- 基础信息 -->
           <div class="form-section">
@@ -351,28 +75,27 @@
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required">年龄</label>
-                <input type="number" v-model.number="patientInfo.age" class="form-input" :class="{ error: errors.age }" placeholder="请输入年龄" min="0" max="150">
-                <div v-if="errors.age" class="error-text">{{ errors.age }}</div>
+                <label for="patient-age" class="form-label required">年龄（岁）</label>
+                <input id="patient-age" type="number" inputmode="numeric" v-model.number="patientInfo.age" class="form-input" :class="{ error: errors.age }" :aria-invalid="!!errors.age" aria-describedby="age-error" placeholder="请输入年龄" min="0" max="150">
+                <div id="age-error" v-if="errors.age" class="error-text">{{ errors.age }}</div>
               </div>
               <div class="form-group">
-                <label class="form-label required">性别</label>
-                <select v-model="patientInfo.gender" class="form-select" :class="{ error: errors.gender }">
-                  <option value="">请选择性别</option>
-                  <option value="male">男</option>
-                  <option value="female">女</option>
-                </select>
+                <span id="gender-label" class="form-label required">性别</span>
+                <div class="gender-picker" :class="{ error: errors.gender }" role="group" aria-labelledby="gender-label">
+                  <label class="gender-option"><input type="radio" name="gender" value="male" v-model="patientInfo.gender">男</label>
+                  <label class="gender-option"><input type="radio" name="gender" value="female" v-model="patientInfo.gender">女</label>
+                </div>
                 <div v-if="errors.gender" class="error-text">{{ errors.gender }}</div>
               </div>
             </div>
-            <div class="form-row">
+            <div class="form-row history-row">
               <div class="form-group">
-                <label class="form-label">既往病史</label>
-                <input type="text" v-model="patientInfo.history" class="form-input" placeholder="如：高血压、糖尿病等">
+                <label for="patient-history" class="form-label">既往病史</label>
+                <input id="patient-history" type="text" v-model="patientInfo.history" class="form-input" placeholder="如：高血压、糖尿病等">
               </div>
               <div class="form-group">
-                <label class="form-label">过敏史</label>
-                <input type="text" v-model="patientInfo.allergies" class="form-input" placeholder="如：青霉素过敏">
+                <label for="patient-allergies" class="form-label">过敏史</label>
+                <input id="patient-allergies" type="text" v-model="patientInfo.allergies" class="form-input" placeholder="如：青霉素过敏">
               </div>
             </div>
           </div>
@@ -388,36 +111,36 @@
             
             <div class="symptom-list">
               <div v-for="(symptom, index) in symptoms" :key="index" class="symptom-item">
-                <button v-if="symptoms.length > 1" @click="removeSymptom(index)" class="btn-remove" title="删除">×</button>
-                
-                <textarea v-model="symptom.description" class="symptom-textarea" :class="{ error: errors['symptom' + index] }" placeholder="请描述症状（如：头晕、头痛、胸闷等）"></textarea>
+                <div class="symptom-heading">
+                  <label :for="'symptom-' + index">症状 {{ index + 1 }}</label>
+                  <button v-if="symptoms.length > 1" @click="removeSymptom(index)" class="btn-remove" :aria-label="'删除症状' + (index + 1)" title="删除症状">×</button>
+                </div>
+                <textarea :id="'symptom-' + index" v-model="symptom.description" class="symptom-textarea" :class="{ error: errors['symptom' + index] }" :aria-invalid="!!errors['symptom' + index]" placeholder="请描述症状（如：头晕、头痛、胸闷等）"></textarea>
                 <div v-if="errors['symptom' + index]" class="error-text" style="margin-top: 4px;">{{ errors['symptom' + index] }}</div>
                 
                 <div class="symptom-meta">
                   <div class="meta-group">
                     <span class="meta-label">持续时间</span>
                     <div class="duration-picker">
-                      <select v-model.number="symptom.durationYears">
+                      <label><span class="duration-unit">年</span><select v-model.number="symptom.durationYears" :aria-label="'症状' + (index + 1) + '持续年数'">
                         <option v-for="option in durationYearOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                      </select>
-                      <span class="duration-unit">年</span>
-                      <select v-model.number="symptom.durationMonths">
+                      </select></label>
+                      <label><span class="duration-unit">月</span><select v-model.number="symptom.durationMonths" :aria-label="'症状' + (index + 1) + '持续月数'">
                         <option v-for="m in 12" :key="m-1" :value="m-1">{{ m - 1 }}</option>
-                      </select>
-                      <span class="duration-unit">月</span>
-                      <select v-model.number="symptom.durationDays">
+                      </select></label>
+                      <label><span class="duration-unit">日</span><select v-model.number="symptom.durationDays" :aria-label="'症状' + (index + 1) + '持续天数'">
                         <option v-for="d in 31" :key="d-1" :value="d-1">{{ d - 1 }}</option>
-                      </select>
-                      <span class="duration-unit">日</span>
+                      </select></label>
                     </div>
                   </div>
                   
                   <div class="meta-group">
-                    <span class="meta-label">严重程度（点击选择）</span>
+                    <span class="meta-label">严重程度</span>
                     <div class="severity-picker">
-                      <button v-for="level in severityLevels" :key="level.value" class="severity-btn" :class="{ active: symptom.severity === level.value }" :data-level="level.value" @click="symptom.severity = level.value" :title="'严重程度：' + level.label">
+                      <label v-for="level in severityLevels" :key="level.value" class="severity-btn" :data-level="level.value">
+                        <input type="radio" :name="'symptom-severity-' + index" :value="level.value" v-model="symptom.severity" :aria-label="'症状' + (index + 1) + '严重程度：' + level.label">
                         {{ level.label }}
-                      </button>
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -432,21 +155,17 @@
               添加更多症状
             </button>
             
+             <div v-if="availableCommonSymptoms.length" class="quick-title">常见症状</div>
              <div v-if="availableCommonSymptoms.length" class="quick-symptoms">
-               <span style="font-size: 13px; color: #888;">快速添加：</span>
                <button v-for="s in availableCommonSymptoms" :key="s" @click="addQuickSymptom(s)" class="quick-btn">{{ s }}</button>
             </div>
           </div>
           
-          <button @click="submitSymptoms" class="btn-primary" :disabled="isLoading || !canSubmit">
-            <span v-if="isLoading" class="loading-spinner"></span>
-            <span>{{ isLoading ? 'AI分析中...' : '开始智能诊断' }}</span>
-          </button>
-        </div>
+        </fieldset>
         
         <!-- 步骤2: 追问和诊断 -->
-        <div v-if="currentStep === 2" class="card">
-          <h2 class="card-title">AI智能追问</h2>
+        <fieldset v-if="currentStep === 2" class="card" :disabled="isLoading" aria-labelledby="followup-heading">
+          <h2 id="followup-heading" class="card-title" tabindex="-1">AI智能追问</h2>
           
           <!-- 进度信息 -->
           <div class="progress-info">
@@ -501,59 +220,44 @@
             <div class="questions-list">
               <div v-for="(q, qIdx) in currentQuestions" :key="q.question_id" class="question-card">
                 <div class="question-header">
-                  <span class="question-text">{{ q.question }}</span>
+                  <label :for="'answer-' + q.question_id" :id="'question-' + q.question_id" class="question-text">{{ qIdx + 1 }}. {{ q.question }}</label>
                   <div>
-                    <span v-if="q.target_symptom" class="question-symptom" style="font-size: 10px; color: #e74c3c; background: #fff5f5; padding: 2px 6px; border-radius: 3px; margin-right: 6px;">{{ q.target_symptom }}</span>
+                    <span v-if="q.target_symptom" class="question-symptom">{{ q.target_symptom }}</span>
                     <span class="question-target">{{ q.target_disease }}</span>
                   </div>
                 </div>
                 <div v-if="q.purpose" class="question-prompt">{{ q.purpose }}</div>
                 
                 <!-- 选择题选项 -->
-                <div v-if="q.input_type === 'yesno'" class="yesno-btns">
-                  <button class="yesno-btn yes" :class="{ selected: q.answer === true || q.answer === '是' }" @click="selectYesNo(q, '是')">是</button>
-                  <button class="yesno-btn no" :class="{ selected: q.answer === false || q.answer === '否' }" @click="selectYesNo(q, '否')">否</button>
+                <div v-if="q.input_type === 'yesno'" class="yesno-btns" role="group" :aria-labelledby="'question-' + q.question_id">
+                  <label class="yesno-btn"><input type="radio" :name="q.question_id" value="是" v-model="q.answer">是</label>
+                  <label class="yesno-btn"><input type="radio" :name="q.question_id" value="否" v-model="q.answer">否</label>
                 </div>
                 
-                <div v-else-if="q.input_type === 'single'" class="answer-options">
-                  <button v-for="opt in q.options" :key="opt" class="option-btn" :class="{ selected: q.answer === opt }" @click="selectSingle(q, opt)">{{ opt }}</button>
+                <div v-else-if="q.input_type === 'single'" class="answer-options" role="group" :aria-labelledby="'question-' + q.question_id">
+                  <label v-for="opt in q.options" :key="opt" class="option-btn"><input type="radio" :name="q.question_id" :value="opt" v-model="q.answer">{{ opt }}</label>
                 </div>
                 
-                <div v-else-if="q.input_type === 'multiple'" class="answer-options">
-                  <button v-for="opt in q.options" :key="opt" class="option-btn" :class="{ selected: q.answers && q.answers.includes(opt) }" @click="toggleMulti(q, opt)">{{ opt }}</button>
+                <div v-else-if="q.input_type === 'multiple'" class="answer-options" role="group" :aria-labelledby="'question-' + q.question_id">
+                  <label v-for="opt in q.options" :key="opt" class="option-btn"><input type="checkbox" :value="opt" v-model="q.answers">{{ opt }}</label>
                 </div>
                 
-                <div v-else-if="q.input_type === 'severity'" class="severity-picker" style="margin-top: 8px;">
-                  <button v-for="level in severityLevels" :key="level.value" class="severity-btn" :class="{ active: q.answer === level.value }" :data-level="level.value" @click="selectSeverity(q, level.value)">{{ level.label }}</button>
+                <div v-else-if="q.input_type === 'severity'" class="severity-picker" role="group" :aria-labelledby="'question-' + q.question_id" style="margin-top: 8px;">
+                  <label v-for="level in severityLevels" :key="level.value" class="severity-btn" :data-level="level.value"><input type="radio" :name="q.question_id" :value="level.value" v-model="q.answer">{{ level.label }}</label>
                 </div>
                 
                 <div v-else>
-                  <input type="text" v-model="q.answer" class="form-input" placeholder="请输入答案" style="margin-top: 8px;">
+                  <textarea :id="'answer-' + q.question_id" v-model="q.answer" class="form-input answer-textarea" placeholder="请输入答案"></textarea>
                 </div>
               </div>
             </div>
           </div>
           
-          <div class="button-group">
-            <!-- 加载进度条 -->
-            <div v-if="isLoading" class="loading-progress-bar">
-              <div class="progress-text">{{ getLoadingMessage() }}</div>
-              <div class="progress-track">
-                <div class="progress-fill" :style="{width: loadingProgress + '%'}"></div>
-              </div>
-            </div>
-            
-            <button @click="nextRound" class="btn-primary" :disabled="isLoading || (!isDiagnosisClear && answeredCount !== currentQuestions.length)">
-              <span v-if="isLoading" class="loading-spinner"></span>
-              <span>{{ isLoading ? 'AI分析中，请稍候...' : (isDiagnosisClear ? '查看最终诊断' : '下一轮追问') }}</span>
-            </button>
-            <button @click="startNewDiagnosis" class="btn-secondary">重新开始</button>
-          </div>
-        </div>
+        </fieldset>
         
         <!-- 步骤3: 最终诊断 -->
         <div v-if="currentStep === 3" class="card">
-          <h2 class="card-title">辅助诊断结论</h2>
+          <h2 class="card-title" tabindex="-1">辅助诊断结论</h2>
           
           <!-- 临床思维链总结 -->
           <div v-if="clinicalReasoning" class="reasoning-box">
@@ -616,21 +320,31 @@
             <div class="reasoning-title">下一步建议</div>
             <p v-for="item in carePlan" :key="item" class="reasoning-content">{{ item }}</p>
           </div>
-          <div class="button-group">
-            <button @click="startNewDiagnosis" class="btn-primary">
-              <span>开始新的诊断</span>
-            </button>
-          </div>
         </div>
       </main>
       <footer class="app-footer">
         <p class="footer-disclaimer">本次辅助诊断仅用于参考，不能替代临床判断；具体诊疗方案请结合患者实际临床情况、体格检查、辅助检查结果及医生意见确定。如出现胸痛、呼吸困难、意识异常、严重出血、持续高热等急危重症请立即就医。</p>
       </footer>
+      <div class="action-dock" aria-label="诊疗操作">
+        <div class="action-inner">
+          <p class="action-caption" role="status">{{ isLoading ? '正在分析，请稍候…' : currentStep === 1 ? '已填写 ' + symptoms.filter(s => s.description.trim()).length + ' 项症状' : currentStep === 2 ? '本轮已回答 ' + answeredCount + ' / ' + currentQuestions.length + ' 项' : '辅助诊断报告已生成' }}</p>
+          <div class="action-buttons">
+            <button v-if="currentStep === 2" @click="confirmRestart" class="btn-secondary" :disabled="isLoading">重新开始</button>
+            <button v-if="currentStep === 1" @click="submitSymptoms" class="btn-primary" :disabled="isLoading">
+              <span v-if="isLoading" class="loading-spinner"></span>{{ isLoading ? '正在分析' : '开始智能诊断' }}
+            </button>
+            <button v-else-if="currentStep === 2" @click="nextRound" class="btn-primary" :disabled="isLoading || (!isDiagnosisClear && answeredCount !== currentQuestions.length)">
+              <span v-if="isLoading" class="loading-spinner"></span>{{ isLoading ? '正在分析' : (isDiagnosisClear ? '查看最终诊断' : '提交本轮回答') }}
+            </button>
+            <button v-else @click="confirmRestart" class="btn-primary">开始新的诊断</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    const { createApp, ref, computed } = Vue;
+    const { createApp, ref, computed, watch, nextTick, onMounted, onBeforeUnmount } = Vue;
 
     createApp({
       setup() {
@@ -671,6 +385,41 @@
         const patientInfo = ref({ age: null, gender: '', history: '', allergies: '' });
         const symptoms = ref([{ description: '', durationYears: 0, durationMonths: 0, durationDays: 0, severity: 1 }]);
         const errors = ref({});
+        const formError = ref('');
+        const keyboardOpen = ref(false);
+        let restingHeight = window.innerHeight;
+        const viewport = window.visualViewport;
+
+        function updateKeyboard() {
+          const editing = document.activeElement?.matches('textarea, input[type="text"], input[type="number"]');
+          const height = viewport?.height || window.innerHeight;
+          if (!editing) restingHeight = window.innerHeight;
+          keyboardOpen.value = !!editing && restingHeight - height > 120;
+        }
+        onMounted(() => {
+          document.addEventListener('focusin', updateKeyboard);
+          document.addEventListener('focusout', updateKeyboard);
+          viewport?.addEventListener('resize', updateKeyboard);
+          window.addEventListener('resize', updateKeyboard);
+        });
+        onBeforeUnmount(() => {
+          document.removeEventListener('focusin', updateKeyboard);
+          document.removeEventListener('focusout', updateKeyboard);
+          viewport?.removeEventListener('resize', updateKeyboard);
+          window.removeEventListener('resize', updateKeyboard);
+        });
+
+        watch([currentStep, currentRound], async () => {
+          await nextTick();
+          document.querySelector('.card-title')?.focus({ preventScroll: true });
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        });
+
+        async function showError(message) {
+          formError.value = message;
+          await nextTick();
+          document.querySelector('.form-error')?.focus();
+        }
         
         const sessionId = ref('');
         const diagnosisHypothesis = ref([]);
@@ -710,13 +459,13 @@
           if (q.input_type === 'multiple') {
             return q.answers && q.answers.length > 0;
           }
-          return q.answer !== null && q.answer !== undefined && q.answer !== '';
+          return q.answer !== null && q.answer !== undefined && (typeof q.answer !== 'string' || q.answer.trim() !== '');
         }).length);
         
         const apiStatusText = computed(() => {
           if (apiStatus.value === 'loading') return '正在连接AI诊断服务...';
-          if (apiStatus.value === 'error') return '⚠️ 后端服务未连接（请确保本地后端正在运行）';
-          return '✓ AI诊断服务已就绪';
+          if (apiStatus.value === 'error') return '诊断服务暂时不可用，请稍后重试';
+          return 'AI诊断服务已就绪';
         });
         
         // 验证表单
@@ -724,7 +473,7 @@
           errors.value = {};
           let isValid = true;
           
-          if (!patientInfo.value.age || patientInfo.value.age < 0 || patientInfo.value.age > 150) {
+          if (!Number.isInteger(patientInfo.value.age) || patientInfo.value.age < 0 || patientInfo.value.age > 150) {
             errors.value.age = '请输入有效的年龄';
             isValid = false;
           }
@@ -740,6 +489,7 @@
               hasSymptom = true;
             } else {
               errors.value['symptom' + idx] = '请填写症状描述';
+              isValid = false;
             }
           });
           
@@ -779,7 +529,9 @@
         }
         function addQuickSymptom(s) { 
           if (!symptoms.value.some(symptom => symptom.description.trim() === s)) {
-            symptoms.value.push({ description: s, durationYears: 0, durationMonths: 0, durationDays: 0, severity: 1 });
+            const empty = symptoms.value.find(symptom => !symptom.description.trim());
+            if (empty) empty.description = s;
+            else symptoms.value.push({ description: s, durationYears: 0, durationMonths: 0, durationDays: 0, severity: 1 });
           }
         }
         
@@ -893,8 +645,10 @@
         }
         
         async function submitSymptoms() {
+          if (isLoading.value) return;
+          formError.value = '';
           if (!validateForm()) {
-            alert('请完善必要的患者信息和症状描述');
+            await showError('请完善必要的患者信息和症状描述');
             return;
           }
           
@@ -950,7 +704,7 @@
             apiStatus.value = 'ready';
           } catch (error) {
             console.error('诊断失败:', error);
-            alert(error.message || '诊断服务暂时不可用，请重试');
+            await showError(error.message || '诊断服务暂时不可用，请重试');
             apiStatus.value = 'error';
           } finally {
             stopLoadingAnimation();
@@ -959,6 +713,8 @@
         }
         
         async function nextRound() {
+          if (isLoading.value) return;
+          formError.value = '';
           if (isDiagnosisClear.value) {
             await submitDiagnosis();
             return;
@@ -972,7 +728,7 @@
           })).filter(a => a.answer !== null && a.answer !== undefined && (Array.isArray(a.answer) ? a.answer.length > 0 : true));
           
           if (answers.length !== currentQuestions.value.length) {
-            alert('请回答本轮全部问题，未知信息可选择不清楚或未检查');
+            await showError('请回答本轮全部问题，未知信息可填写不清楚或未检查');
             return;
           }
           
@@ -1043,7 +799,7 @@
             
           } catch (error) {
             console.error('获取追问结果失败:', error);
-            alert(error.message || '获取追问结果失败');
+            await showError(error.message || '获取追问结果失败');
           } finally {
             stopLoadingAnimation();
             isLoading.value = false;
@@ -1098,7 +854,7 @@
             
           } catch (error) {
             console.error('获取诊断结果失败:', error);
-            alert(error.message || '获取诊断结果失败');
+            await showError(error.message || '获取诊断结果失败');
           } finally {
             stopLoadingAnimation();
             isLoading.value = false;
@@ -1108,6 +864,12 @@
         function startNewDiagnosis() {
           resetData();
           currentStep.value = 1;
+        }
+
+        function confirmRestart() {
+          if (!isLoading.value && window.confirm('重新开始将清空当前患者信息和诊断记录，确定继续吗？')) {
+            startNewDiagnosis();
+          }
         }
         
         function resetData() {
@@ -1125,6 +887,7 @@
           clinicalReasoning.value = '';
           expandedRefs.value = {};
           errors.value = {};
+          formError.value = '';
         }
         
         return {
@@ -1138,7 +901,7 @@
           submitSymptoms, nextRound, submitDiagnosis,
           getHypothesisClass, getConfClass, toggleRef, highlightText,
           guidelineSegments, guidelineRelation, safeGuidelineUrl,
-          startNewDiagnosis, resetData, Math,
+          startNewDiagnosis, confirmRestart, formError, keyboardOpen, resetData, Math,
           loadingProgress, getLoadingMessage, startLoadingAnimation, stopLoadingAnimation
         };
       }

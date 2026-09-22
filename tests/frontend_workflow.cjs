@@ -9,9 +9,10 @@ let completed = 0;
 let finalCalls = 0;
 const question = round => ({ question_id: `r${round}`, question: '待补充信息', input_type: 'text' });
 const context = {
-  Vue: { ref: value => ({ value }), computed: fn => ({ get value() { return fn(); } }),
+  Vue: { ref: value => ({ value }), computed: fn => ({ get value() { return fn(); } }), watch() {}, nextTick: async () => {}, onMounted() {}, onBeforeUnmount() {},
     createApp: config => ({ mount() { app = config.setup(); } }) },
   window: { location: { hostname: 'maoni.icu', pathname: '/medrag/' } },
+  document: { querySelector: () => null },
   AbortController, URL, console, setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
   alert: message => { throw new Error(message); },
   fetch: async (url, options) => {
@@ -37,6 +38,13 @@ const context = {
 };
 vm.runInNewContext(script, context);
 (async () => {
+  await app.submitSymptoms();
+  assert.ok(app.formError.value);
+  app.addQuickSymptom('咳嗽');
+  assert.equal(app.symptoms.value.length, 1, 'Quick selection reuses empty symptom');
+  assert.ok(!app.availableCommonSymptoms.value.includes('咳嗽'));
+  app.addQuickSymptom('咳嗽');
+  assert.equal(app.symptoms.value.length, 1, 'Quick selection is deduplicated');
   app.patientInfo.value = { age: 42, gender: 'female' };
   app.symptoms.value = [{ description: '咳嗽' }];
   await app.submitSymptoms();

@@ -96,7 +96,8 @@ medrag/
 │   └── requirements.txt     # Python 依赖
 ├── medrag_frontend/         # 前端页面
 │   ├── index.html           # 主界面（临床思维链版）
-│   └── llm_index.html       # LLM 深度版界面
+│   ├── llm_index.html       # 当前生产界面
+│   └── mobile.css           # 移动端优先的响应式样式
 ├── MedRAG-main/             # 原始 MedRAG 研究代码
 ├── docs/                    # 研究文档
 │   ├── medrag_research/     # MedRAG 项目研究报告
@@ -109,6 +110,17 @@ medrag/
 ```
 
 ---
+
+## 移动端界面
+
+保留 Vue 3 H5 实现，采用 uni-app 常见的分组表单、分段选择器及底部操作栏风格；并未迁移为 uni-app 小程序工程。
+控件触控区域至少 44px，正文和输入框至少 16px，适配 320px 起的手机宽度、横屏及平板。
+支持安全区留白、键盘弹出时的操作栏避让、原生单选/复选控件、表单错误定位及重置确认。
+发布前端时须同时部署 `llm_index.html` 和 `mobile.css`；修改样式后更新 HTML 中的 CSS 版本参数。
+
+前端回归测试：`node tests/frontend_workflow.cjs`。浏览器测试需安装 `playwright`、`vue` 并使用本机 Chrome：
+`node tests/mobile_frontend.cjs` 和 `node tests/guideline_visual.cjs`。
+可通过 `CHROME_PATH`、`PLAYWRIGHT_MODULE`、`VISUAL_NODE_MODULES` 指定浏览器及依赖路径；测试仅使用合成病例和模拟 API，不调用真实诊断服务。
 
 ## 医学知识库覆盖
 

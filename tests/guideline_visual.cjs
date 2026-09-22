@@ -23,6 +23,7 @@ const diagnoses = [{ disease: '急性咳嗽（合成测试病例）', diagnosis_
 { disease: '其他待排除原因（合成测试）', diagnosis_type: '待排除', reasoning: '',
   uncertainties: [], evidence: [], suggestions: [], references: [], guideline_status: 'not_found' }];
 const html = fs.readFileSync(path.join(__dirname, '../medrag_frontend/llm_index.html'), 'utf8')
+  .replace(/<link rel="stylesheet" href="\.\/mobile.css[^\"]*">/, () => `<style>${fs.readFileSync(path.join(__dirname, '../medrag_frontend/mobile.css'), 'utf8')}</style>`)
   .replace('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>', () => `<script>${vue}</script>`)
   .replace('const currentStep = ref(1);', 'const currentStep = ref(3);')
   .replace('const finalDiagnoses = ref([]);', () => `const finalDiagnoses = ref(${JSON.stringify(diagnoses)});`);
@@ -51,7 +52,8 @@ const html = fs.readFileSync(path.join(__dirname, '../medrag_frontend/llm_index.
       await page.locator('.guideline-reference summary').click();
       assert.deepEqual(errors, []);
       const output = path.join(os.tmpdir(), `medrag-guideline-${width}.png`);
-      await page.screenshot({ path: output, fullPage: true });
+      await page.locator('.guideline-quote').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: output });
       console.log(output);
       await page.close();
     }
