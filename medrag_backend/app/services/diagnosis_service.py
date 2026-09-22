@@ -7,6 +7,7 @@ from ..config import MAX_FOLLOW_UP_ROUNDS
 from ..models import DiagnosisRequest, DiagnosisSession, FollowUpAnswer
 from .llm_service import Assessment, ClinicalModelError, LLMService
 from .session_store import SessionStore
+from .guideline_service import GuidelineService
 
 
 ROUND_FOCUS = [
@@ -28,6 +29,7 @@ class DiagnosisService:
     def __init__(self) -> None:
         self.sessions = SessionStore()
         self.llm = LLMService()
+        self.guidelines = GuidelineService()
         self._busy: set[str] = set()
 
     @staticmethod
@@ -185,6 +187,7 @@ class DiagnosisService:
                         diagnosis["basis"] = list(dict.fromkeys(quotes))
                         grounded.append(diagnosis)
                 report["diagnoses"] = grounded
+                await self.guidelines.annotate(report, case, self.llm)
             report.update({
                 "session_id": session_id, "completed_rounds": session.completed_rounds,
                 "is_emergency": session.is_emergency, "emergency_warning": session.emergency_warning,

@@ -18,7 +18,7 @@ load_dotenv(BASE_DIR.parent / ".env.local", override=True)
 load_dotenv(BASE_DIR / ".env.local", override=True)
 
 APP_TITLE = "全科医生辅助诊断系统"
-APP_VERSION = "6.1.0"
+APP_VERSION = "6.2.0"
 SESSION_TTL_MINUTES = 45
 MAX_SESSION_COUNT = 500
 MAX_FOLLOW_UP_ROUNDS = 6

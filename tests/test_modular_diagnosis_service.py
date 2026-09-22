@@ -63,6 +63,26 @@ class DiagnosisServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("references", case)
             self.assertNotIn("support_score", str(report))
 
+    async def test_final_report_preserves_guidelines_and_reuses_cached_report(self):
+        self.stop_at = 4
+        response = await self.service.start(self.request)
+        for _ in range(4):
+            response = await self.service.follow_up(response['session_id'], self.answers(response))
+        self.service.llm.report.return_value = FinalReport(
+            clinical_reasoning="待核实", missing_information=["查体"], care_plan=["面诊评估"],
+            diagnoses=[dict(disease="咳嗽待查", guideline_query="acute cough", basis=[
+                dict(source_id="symptom:0", quote="咳嗽")], uncertainties=[], next_steps=[])])
+
+        async def annotate(report, case, llm):
+            report['diagnoses'][0]['references'] = [{'source_id': 'verified-test-source'}]
+            report['diagnoses'][0]['guideline_status'] = 'matched'
+
+        self.service.guidelines.annotate = AsyncMock(side_effect=annotate)
+        result = await self.service.finalize(response['session_id'], [])
+        self.assertEqual(result['diagnoses'][0]['references'][0]['source_id'], 'verified-test-source')
+        self.assertEqual(await self.service.finalize(response['session_id'], []), result)
+        self.service.guidelines.annotate.assert_awaited_once()
+
     async def test_model_cannot_end_before_four_rounds(self):
         self.stop_at = 0
         response = await self.service.start(self.request)

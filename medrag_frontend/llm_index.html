@@ -173,6 +173,13 @@
     .ref-content { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #555; line-height: 1.6; }
     .ref-content.expanded { display: block; }
     .ref-content .highlight { background: #ffebee; color: #c62828; padding: 2px 4px; border-radius: 2px; font-weight: 500; }
+    .guideline-reference { font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; border: 0; border-top: 1px solid #d8e1e8; border-radius: 0; padding: 12px 0; background: transparent; }
+    .guideline-reference summary { cursor: pointer; font-weight: 600; color: #1a5276; min-height: 44px; }
+    .guideline-meta, .guideline-status { color: #59636e; font-size: 14px; line-height: 1.6; margin: 8px 0; }
+    .guideline-quote { margin: 10px 0; padding-left: 12px; border-left: 3px solid #c62828; }
+    .guideline-match { color: #b42318; background: #fff0ef; font-weight: 600; }
+    .guideline-reference p { margin: 8px 0; }
+    .guideline-source { display: inline-block; padding: 8px 0; color: #185f86; text-decoration: underline; }
     
     /* 建议 */
     .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
@@ -580,17 +587,22 @@
               </div>
               
               <!-- 参考文献 -->
-              <div v-if="diag.references && diag.references.length > 0" class="references-section">
-                <div class="evidence-title">参考文献/指南</div>
-                <div v-for="(ref, refIdx) in diag.references" :key="refIdx" class="ref-item">
-                  <div class="ref-header" @click="toggleRef(idx, refIdx)">
-                    <span class="ref-title">{{ ref.title }}</span>
-                    <span class="ref-toggle">{{ ref.expanded ? '▼ 收起' : '▶ 展开' }}</span>
-                  </div>
-                  <div class="ref-content" :class="{ expanded: ref.expanded }">
-                    <span v-html="highlightText(ref.content)"></span>
-                  </div>
-                </div>
+              <div class="references-section">
+                <div class="evidence-title">指南对照依据</div>
+                <p v-if="!diag.references.length" class="guideline-status">{{ diag.guideline_status === 'unavailable' ? '指南来源暂时无法读取或核对，本次未提供指南依据。' : '未检索到可核实且适用于本诊断的指南条文。' }}</p>
+                <details v-for="ref in diag.references" :key="ref.source_id" class="ref-item guideline-reference" open>
+                  <summary>{{ ref.title }} · {{ ref.guideline_code }}</summary>
+                  <div class="guideline-meta">{{ ref.publisher }} · 条款 {{ ref.section }}</div>
+                  <div class="guideline-meta">发布：{{ ref.published_date || '原页未注明' }}<span v-if="ref.updated_date"> · 更新：{{ ref.updated_date }}</span></div>
+                  <p>{{ guidelineRelation(ref.relation) }}：{{ ref.applicability }}</p>
+                  <blockquote class="guideline-quote" lang="en">
+                    <span v-for="(part, partIdx) in guidelineSegments(ref.quote, ref.highlights)" :key="partIdx" :class="{ 'guideline-match': part.highlight }">{{ part.text }}</span>
+                  </blockquote>
+                  <p>中文释义（机器翻译）：{{ ref.translation }}</p>
+                  <p>适用限制：{{ ref.limitations }}</p>
+                  <a v-if="ref.source_url" :href="ref.source_url" target="_blank" rel="noopener noreferrer" class="guideline-source">查看官方完整条文</a>
+                  <div class="guideline-meta">来源核对时间：{{ ref.checked_at }}</div>
+                </details>
               </div>
               
               <!-- 建议 -->
@@ -836,6 +848,38 @@
           });
           return result;
         }
+
+        function safeGuidelineUrl(raw) {
+          try {
+            const url = new URL(raw);
+            return url.protocol === 'https:' && url.host === 'www.nice.org.uk' && !url.username && !url.password && /^\/guidance\/(ng|cg)\d+\/chapter\/[a-z0-9-]+$/i.test(url.pathname) ? url.href : '';
+          } catch { return ''; }
+        }
+
+        function guidelineRelation(relation) {
+          return { diagnostic: '诊断相关条文', evaluation: '检查与评估建议', management: '管理建议（不构成确诊依据）' }[relation] || '指南对照';
+        }
+
+        function guidelineSegments(value, highlights) {
+          const text = String(value || '');
+          const terms = (highlights || []).filter(term => typeof term === 'string' && term && text.includes(term));
+          const parts = [];
+          let offset = 0;
+          while (offset < text.length) {
+            let next = text.length, match = '';
+            for (const term of terms) {
+              const found = text.indexOf(term, offset);
+              if (found >= 0 && (found < next || (found === next && term.length > match.length))) {
+                next = found; match = term;
+              }
+            }
+            if (next > offset) parts.push({ text: text.slice(offset, next), highlight: false });
+            if (!match) break;
+            parts.push({ text: match, highlight: true });
+            offset = next + match.length;
+          }
+          return parts;
+        }
         
         // 展开/收起参考文献
         function toggleRef(diagIdx, refIdx) {
@@ -1031,9 +1075,10 @@
               reasoning: (item.basis || []).join('；') || data.clinical_reasoning || '',
               evidence: item.basis || [],
               suggestions: item.next_steps || [],
-              references: (data.references || []).map((reference) => ({
+              guideline_status: item.guideline_status || 'not_found',
+              references: (item.references || []).map((reference) => ({
                 ...reference,
-                content: reference.summary || (reference.evidence_paragraphs || []).map((paragraph) => paragraph.text).join(' '),
+                source_url: safeGuidelineUrl(reference.source_url),
               })),
             }));
             clinicalReasoning.value = [data.clinical_reasoning, ...(data.missing_information || []).map(item => '待补充：' + item)].filter(Boolean).join('\n');
@@ -1092,6 +1137,7 @@
           selectYesNo, selectSeverity, selectSingle, toggleMulti,
           submitSymptoms, nextRound, submitDiagnosis,
           getHypothesisClass, getConfClass, toggleRef, highlightText,
+          guidelineSegments, guidelineRelation, safeGuidelineUrl,
           startNewDiagnosis, resetData, Math,
           loadingProgress, getLoadingMessage, startLoadingAnimation, stopLoadingAnimation
         };
