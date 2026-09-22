@@ -1,94 +1,160 @@
-import asyncio
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
+from fastapi.testclient import TestClient
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "medrag_backend"))
+
+from app.models import DiagnosisRequest, PatientInfo, Symptom, FollowUpAnswer
+from app.services.diagnosis_service import DiagnosisService, WorkflowError
+from app.services.llm_service import Assessment, ClinicalModelError, FinalReport, LLMService
 
 
-BACKEND_DIR = Path(__file__).resolve().parents[1] / "medrag_backend"
-sys.path.insert(0, str(BACKEND_DIR))
-
-from app.models import DiagnosisRequest, FollowUpAnswer, PatientInfo, Symptom  # noqa: E402
-from app.services.diagnosis_service import DiagnosisService  # noqa: E402
-
-
-class DiagnosisServiceTests(unittest.TestCase):
-    def setUp(self):
+class DiagnosisServiceTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.service = DiagnosisService()
-        self.service.llm.enabled = False
-
-    def test_start_returns_bounded_question_round_and_support_ranking(self):
-        result = self.service.start(
-            DiagnosisRequest(
-                patient=PatientInfo(age=45, gender="male"),
-                symptoms=[Symptom(description="咳嗽", duration_days=5, severity=3)],
-            )
+        self.stop_at = 6
+        self.cases = []
+        self.service.llm.assess = AsyncMock(side_effect=self.assess)
+        self.service.llm.report = AsyncMock(return_value=FinalReport(
+            clinical_reasoning="现有资料不足以确定病因。", diagnoses=[],
+            missing_information=["查体结果"], care_plan=["建议面诊补充查体。"],
+        ))
+        self.request = DiagnosisRequest(
+            patient=PatientInfo(age=42, gender="female", history="既往用药记录", allergies="药物过敏"),
+            symptoms=[Symptom(description="咳嗽", duration_days=3), Symptom(description="口干")],
         )
 
-        self.assertEqual(result["round_count"], 1)
-        self.assertEqual(result["max_rounds"], 6)
-        self.assertLessEqual(len(result["first_round_questions"]), 3)
-        self.assertTrue(result["differential_diagnoses"])
-        self.assertIn("confidence", result["differential_diagnoses"][0])
-
-    def test_early_stop_requires_four_completed_rounds_and_clear_evidence_margin(self):
-        candidates = [{"confidence": 82}, {"confidence": 60}]
-        self.assertFalse(self.service._is_diagnosis_clear(candidates, 3, 6))
-        self.assertTrue(self.service._is_diagnosis_clear(candidates, 4, 6))
-        self.assertFalse(self.service._is_diagnosis_clear([{"confidence": 82}, {"confidence": 70}], 4, 6))
-
-    def test_cough_path_has_questions_through_four_clinical_stages(self):
-        started = self.service.start(
-            DiagnosisRequest(
-                patient=PatientInfo(age=45, gender="male"),
-                symptoms=[Symptom(description="咳嗽", duration_days=5, severity=3)],
-            )
-        )
-        session_id = started["session_id"]
-        questions = started["first_round_questions"]
-
-        for completed_round in range(1, 4):
-            question = questions[0]
-            result = self.service.follow_up(
-                session_id,
-                [
-                    FollowUpAnswer(
-                        question_id=question["question_id"],
-                        question=question["question"],
-                        answer="没有",
-                        answer_type=question["input_type"],
-                    )
-                ],
-            )
-            self.assertFalse(result["is_diagnosis_clear"])
-            self.assertEqual(result["completed_rounds"], completed_round)
-            self.assertTrue(result["next_round_questions"])
-            questions = result["next_round_questions"]
-
-    def test_final_report_uses_support_score_not_probability(self):
-        started = self.service.start(
-            DiagnosisRequest(
-                patient=PatientInfo(age=30, gender="female"),
-                symptoms=[Symptom(description="头痛", duration_days=2, severity=3)],
-            )
-        )
-        question = started["first_round_questions"][0]
-        report = asyncio.run(
-            self.service.finalize(
-                started["session_id"],
-                [
-                    FollowUpAnswer(
-                        question_id=question["question_id"],
-                        question=question["question"],
-                        answer="否",
-                        answer_type=question["input_type"],
-                    )
-                ],
-            )
+    async def assess(self, case):
+        self.cases.append(case)
+        n = case["completed_rounds"]
+        return Assessment(
+            summary="根据已提供的信息继续核实。", is_emergency=False, emergency_warning="",
+            information_sufficient=n >= self.stop_at,
+            missing_information=[] if n >= self.stop_at else ["待补充"],
+            questions=[dict(question=f"第{n + 1}阶段尚需核实的信息？", input_type="text", purpose="补充病史")],
         )
 
-        self.assertTrue(report["diagnoses"])
-        self.assertIn("support_score", report["diagnoses"][0])
-        self.assertNotIn("probability", report["diagnoses"][0])
+    def answers(self, response):
+        return [FollowUpAnswer(question_id=q["question_id"], question="伪造的问题文字",
+                               answer="未检查", answer_type="text") for q in response["next_round_questions"]]
+
+    async def test_four_five_and_six_rounds_then_report_with_all_case_data(self):
+        for stop_at in (4, 5, 6):
+            self.stop_at = stop_at
+            response = await self.service.start(self.request)
+            sid = response["session_id"]
+            for n in range(1, stop_at + 1):
+                response = await self.service.follow_up(sid, self.answers(response))
+                self.assertEqual(response["completed_rounds"], n)
+                self.assertEqual(response["is_diagnosis_clear"], n == stop_at)
+                if n < stop_at:
+                    self.assertEqual(response["round_count"], n + 1)
+                    self.assertTrue(response["next_round_questions"])
+            report = await self.service.finalize(sid, [])
+            self.assertEqual(report["completed_rounds"], stop_at)
+            case = self.service.llm.report.call_args.args[0]
+            self.assertEqual(len(case["answers"]), stop_at)
+            self.assertEqual(len(case["symptoms"]), 2)
+            self.assertEqual(case["patient"]["allergies"], "药物过敏")
+            self.assertNotIn("伪造", case["answers"][0]["question"])
+            self.assertNotIn("candidates", case)
+            self.assertNotIn("references", case)
+            self.assertNotIn("support_score", str(report))
+
+    async def test_model_cannot_end_before_four_rounds(self):
+        self.stop_at = 0
+        response = await self.service.start(self.request)
+        for _ in range(3):
+            self.assertFalse(response["is_diagnosis_clear"])
+            response = await self.service.follow_up(response["session_id"], self.answers(response))
+        self.assertFalse(response["is_diagnosis_clear"])
+
+    async def test_no_graph_or_reference_files_needed(self):
+        with patch.object(Path, "read_text", side_effect=AssertionError("No local corpus allowed")):
+            service = DiagnosisService()
+            service.llm = self.service.llm
+            result = await service.start(self.request)
+        self.assertEqual(result["differential_diagnoses"], [])
+
+    async def test_empty_missing_and_stale_answers_do_not_advance(self):
+        result = await self.service.start(self.request)
+        sid = result["session_id"]
+        with self.assertRaises(WorkflowError):
+            await self.service.follow_up(sid, [])
+        with self.assertRaises(WorkflowError):
+            await self.service.finalize(sid, [])
+        invalid = self.answers(result)
+        invalid[0].question_id = "unknown"
+        with self.assertRaises(WorkflowError):
+            await self.service.follow_up(sid, invalid)
+        self.assertEqual(self.service.sessions.get(sid).completed_rounds, 0)
+
+    async def test_failure_rollback_retry_and_duplicate_submission(self):
+        result = await self.service.start(self.request)
+        sid = result["session_id"]
+        answers = self.answers(result)
+        self.service.llm.assess.side_effect = ClinicalModelError("Unavailable")
+        with self.assertRaises(ClinicalModelError):
+            await self.service.follow_up(sid, answers)
+        self.assertEqual(self.service.sessions.get(sid).all_answers, [])
+        self.service.llm.assess.side_effect = self.assess
+        response = await self.service.follow_up(sid, answers)
+        calls = self.service.llm.assess.call_count
+        self.assertEqual(await self.service.follow_up(sid, answers), response)
+        self.assertEqual(self.service.llm.assess.call_count, calls)
+        self.assertEqual(self.service.sessions.get(sid).completed_rounds, 1)
+
+    async def test_empty_model_questions_is_error_not_final_report(self):
+        self.service.llm.assess.return_value = None
+        self.service.llm.assess.side_effect = None
+        self.service.llm.assess.return_value = Assessment(summary="待核实", is_emergency=False,
+            emergency_warning="", information_sufficient=True, missing_information=[], questions=[])
+        with self.assertRaises(ClinicalModelError):
+            await self.service.start(self.request)
+
+    async def test_emergency_after_answer_stops_without_disease_fallback(self):
+        result = await self.service.start(self.request)
+        self.service.llm.assess.side_effect = None
+        self.service.llm.assess.return_value = Assessment(summary="报告了急症表现", is_emergency=True,
+            emergency_warning="请立即就医。", information_sufficient=False, missing_information=[], questions=[])
+        response = await self.service.follow_up(result["session_id"], self.answers(result))
+        self.assertTrue(response["is_emergency"])
+        report = await self.service.finalize(result["session_id"], [])
+        self.assertEqual(report["diagnoses"], [])
+        self.assertEqual(report["care_plan"], ["请立即就医。"])
+        self.service.llm.report.assert_not_called()
+
+    async def test_disabled_model_fails_without_local_fallback(self):
+        llm = LLMService()
+        llm.enabled = False
+        with self.assertRaises(ClinicalModelError):
+            await llm.assess({})
+
+    async def test_http_routes_use_new_async_workflow_and_reject_premature_report(self):
+        from app import main
+        with patch.object(main, "service", self.service), TestClient(main.app) as client:
+            response = client.post('/api/diagnosis/start', json=self.request.model_dump())
+            self.assertEqual(response.status_code, 200)
+            sid = response.json()['session_id']
+            self.assertEqual(client.post('/api/diagnosis/final', json={"session_id": sid}).status_code, 409)
+            self.service.llm.assess.side_effect = ClinicalModelError('Unavailable')
+            self.assertEqual(client.post('/api/diagnosis/start', json=self.request.model_dump()).status_code, 503)
+            self.assertFalse(client.get('/api/health').json()['local_graph_enabled'])
+
+    async def test_invented_or_unknown_evidence_is_not_shown_in_report(self):
+        self.stop_at = 4
+        response = await self.service.start(self.request)
+        for _ in range(4):
+            response = await self.service.follow_up(response['session_id'], self.answers(response))
+        self.service.llm.report.return_value = FinalReport(
+            clinical_reasoning="待核实", missing_information=["检查结果"], care_plan=["面诊评估"],
+            diagnoses=[dict(disease="未获证实的方向", basis=[
+                dict(source_id="symptom:0", quote="患者有高血压"),
+                dict(source_id="answer:r1_0:0", quote="未检查")], uncertainties=[], next_steps=[])])
+        result = await self.service.finalize(response['session_id'], [])
+        self.assertEqual(result['diagnoses'], [])
 
 
 if __name__ == "__main__":

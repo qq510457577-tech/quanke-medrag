@@ -51,6 +51,11 @@ class DiagnosisSession:
     current_questions: List[Dict[str, Any]] = field(default_factory=list)
     all_answers: List[Dict[str, Any]] = field(default_factory=list)
     round_count: int = 0
+    completed_rounds: int = 0
+    summary: str = ""
+    last_submission: list = field(default_factory=list)
+    last_response: Optional[Dict[str, Any]] = None
+    final_report: Optional[Dict[str, Any]] = None
     max_rounds: int = 6
     is_diagnosis_clear: bool = False
     is_emergency: bool = False

@@ -292,6 +292,7 @@
       </header>
       
       <main class="main-content">
+        <div v-if="emergencyWarning" role="alert" class="reasoning-box" style="border-color: #c62828; color: #9b1c1c; font-size: 17px;">{{ emergencyWarning }}</div>
         <!-- 步骤指示器 -->
         <div class="steps-container">
           <div class="steps-track">
@@ -535,7 +536,7 @@
               </div>
             </div>
             
-            <button @click="nextRound" class="btn-primary" :disabled="isLoading || answeredCount === 0">
+            <button @click="nextRound" class="btn-primary" :disabled="isLoading || (!isDiagnosisClear && answeredCount !== currentQuestions.length)">
               <span v-if="isLoading" class="loading-spinner"></span>
               <span>{{ isLoading ? 'AI分析中，请稍候...' : (isDiagnosisClear ? '查看最终诊断' : '下一轮追问') }}</span>
             </button>
@@ -561,15 +562,14 @@
           
           <!-- 诊断结果 -->
           <div class="final-diagnosis">
-            <p class="support-score-note">诊断支持度用于排序和追问，不代表患病概率或确诊结论。</p>
             <div v-for="(diag, idx) in finalDiagnoses" :key="idx" class="diagnosis-card" :class="diag.diagnosis_type === '主要诊断' ? 'main' : 'secondary'">
               <div class="diagnosis-header">
                 <span class="diagnosis-name">{{ diag.disease }}</span>
-                <span class="diagnosis-confidence" :class="getConfClass(diag.confidence)">支持度 {{ diag.confidence }}/100</span>
               </div>
               <span class="diagnosis-type">{{ diag.diagnosis_type }}</span>
               
               <div class="diagnosis-reason">{{ diag.reasoning }}</div>
+              <div v-if="diag.uncertainties.length" class="diagnosis-reason">待明确：{{ diag.uncertainties.join('；') }}</div>
               
               <!-- 诊断依据 -->
               <div v-if="diag.evidence && diag.evidence.length > 0" class="diagnosis-evidence">
@@ -600,6 +600,10 @@
             </div>
           </div>
           
+          <div v-if="carePlan.length" class="reasoning-box">
+            <div class="reasoning-title">下一步建议</div>
+            <p v-for="item in carePlan" :key="item" class="reasoning-content">{{ item }}</p>
+          </div>
           <div class="button-group">
             <button @click="startNewDiagnosis" class="btn-primary">
               <span>开始新的诊断</span>
@@ -630,7 +634,12 @@
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), timeoutMs);
           try {
-            return await fetch(url, { ...options, signal: controller.signal });
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            if (!response.ok) {
+              const error = await response.json().catch(() => ({}));
+              throw new Error(typeof error.detail === 'string' ? error.detail : '请求失败，请重试');
+            }
+            return response;
           } catch (error) {
             if (error.name === 'AbortError') {
               throw new Error('请求超时，请稍后重试');
@@ -656,6 +665,8 @@
         const currentQuestions = ref([]);
         const reasoningChain = ref('');
         const isDiagnosisClear = ref(false);
+        const emergencyWarning = ref('');
+        const carePlan = ref([]);
         
         const finalDiagnoses = ref([]);
         const clinicalReasoning = ref('');
@@ -731,7 +742,7 @@
         async function checkApi() {
           const apiBase = isProduction ? basePath : 'http://127.0.0.1:8000';
           try {
-            const response = await fetchWithTimeout(`${apiBase}/`, {}, 10000);
+            const response = await fetchWithTimeout(`${API_BASE}/health`, {}, 10000);
             if (response.ok) {
               apiStatus.value = 'ready';
               console.log('后端服务连接成功');
@@ -780,7 +791,7 @@
             '正在构建诊断假设...',
             '正在生成追问问题...',
             'AI深度思考中...',
-            '正在进行循证分析...'
+            '正在整理已知信息...'
           ];
           return messages[Math.floor(Math.random() * messages.length)];
         }
@@ -873,6 +884,7 @@
             currentQuestions.value = data.first_round_questions || data.current_questions || [];
             reasoningChain.value = data.reasoning_chain || '';
             isDiagnosisClear.value = data.is_diagnosis_clear || false;
+            emergencyWarning.value = data.emergency_warning || '';
             
             // 初始化问题答案
             currentQuestions.value.forEach(q => {
@@ -885,7 +897,8 @@
             
             currentRound.value = data.round_count || 1;
             maxRounds.value = data.max_rounds || maxRounds.value;
-            if (data.is_emergency || !currentQuestions.value.length) {
+            currentStep.value = 2;
+            if (data.is_diagnosis_clear) {
               await submitDiagnosis();
               return;
             }
@@ -893,7 +906,7 @@
             apiStatus.value = 'ready';
           } catch (error) {
             console.error('诊断失败:', error);
-            alert('诊断服务暂时不可用，请确保后端服务正在运行');
+            alert(error.message || '诊断服务暂时不可用，请重试');
             apiStatus.value = 'error';
           } finally {
             stopLoadingAnimation();
@@ -902,6 +915,10 @@
         }
         
         async function nextRound() {
+          if (isDiagnosisClear.value) {
+            await submitDiagnosis();
+            return;
+          }
           // 收集当前轮答案
           const answers = currentQuestions.value.map(q => ({
             question_id: q.question_id,
@@ -910,8 +927,8 @@
             answer_type: q.input_type
           })).filter(a => a.answer !== null && a.answer !== undefined && (Array.isArray(a.answer) ? a.answer.length > 0 : true));
           
-          if (answers.length === 0) {
-            alert('请至少回答一个问题');
+          if (answers.length !== currentQuestions.value.length) {
+            alert('请回答本轮全部问题，未知信息可选择不清楚或未检查');
             return;
           }
           
@@ -960,11 +977,12 @@
             
             // 更新诊断明确状态
             isDiagnosisClear.value = data.is_diagnosis_clear || false;
+            emergencyWarning.value = data.emergency_warning || '';
             currentRound.value = data.round_count || currentRound.value;
             maxRounds.value = data.max_rounds || maxRounds.value;
             
             // 获取下一轮问题或完成诊断
-            if (!isDiagnosisClear.value && data.next_round_questions && data.next_round_questions.length > 0 && currentRound.value < maxRounds.value) {
+            if (!isDiagnosisClear.value && data.next_round_questions && data.next_round_questions.length > 0) {
               currentQuestions.value = data.next_round_questions;
               
               // 初始化新问题答案
@@ -972,15 +990,16 @@
                 q.answer = null;
                 q.answers = [];
               });
-            } else {
+            } else if (isDiagnosisClear.value) {
               // 诊断已明确或达到最大轮次，生成最终诊断
+              currentQuestions.value = [];
               await submitDiagnosis();
               return;
             }
             
           } catch (error) {
             console.error('获取追问结果失败:', error);
-            alert('获取追问结果失败');
+            alert(error.message || '获取追问结果失败');
           } finally {
             stopLoadingAnimation();
             isLoading.value = false;
@@ -992,19 +1011,12 @@
           startLoadingAnimation();
           
           try {
-            const answers = currentQuestions.value.map(q => ({
-              question_id: q.question_id,
-              question: q.question,
-              answer: q.input_type === 'multiple' ? q.answers : q.answer,
-              answer_type: q.input_type
-            })).filter(a => a.answer !== null && a.answer !== undefined && (Array.isArray(a.answer) ? a.answer.length > 0 : true));
-            
             const response = await fetchWithTimeout(`${API_BASE}/diagnosis/final`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 session_id: sessionId.value,
-                answers: answers
+                answers: []
               })
             });
             
@@ -1014,8 +1026,8 @@
             
             finalDiagnoses.value = (data.diagnoses || []).map((item, index) => ({
               disease: item.disease || item.name || '待明确',
-              confidence: item.support_score ?? item.confidence ?? item.probability ?? 0,
-              diagnosis_type: index === 0 ? '主要诊断' : '鉴别诊断',
+              diagnosis_type: '待核实的诊断方向',
+              uncertainties: item.uncertainties || [],
               reasoning: (item.basis || []).join('；') || data.clinical_reasoning || '',
               evidence: item.basis || [],
               suggestions: item.next_steps || [],
@@ -1024,7 +1036,9 @@
                 content: reference.summary || (reference.evidence_paragraphs || []).map((paragraph) => paragraph.text).join(' '),
               })),
             }));
-            clinicalReasoning.value = data.clinical_reasoning || '';
+            clinicalReasoning.value = [data.clinical_reasoning, ...(data.missing_information || []).map(item => '待补充：' + item)].filter(Boolean).join('\n');
+            emergencyWarning.value = data.emergency_warning || '';
+            carePlan.value = data.care_plan || [];
             
             // 初始化参考文献展开状态
             finalDiagnoses.value.forEach((diag, i) => {
@@ -1039,7 +1053,7 @@
             
           } catch (error) {
             console.error('获取诊断结果失败:', error);
-            alert('获取诊断结果失败');
+            alert(error.message || '获取诊断结果失败');
           } finally {
             stopLoadingAnimation();
             isLoading.value = false;
@@ -1060,6 +1074,8 @@
           currentQuestions.value = [];
           reasoningChain.value = '';
           isDiagnosisClear.value = false;
+          emergencyWarning.value = '';
+          carePlan.value = [];
           finalDiagnoses.value = [];
           clinicalReasoning.value = '';
           expandedRefs.value = {};
@@ -1069,7 +1085,7 @@
         return {
           currentStep, currentRound, maxRounds, isLoading,
           patientInfo, symptoms, commonSymptoms, availableCommonSymptoms, severityLevels, durationYearOptions, errors, canSubmit,
-          currentQuestions, answeredCount, isDiagnosisClear,
+          currentQuestions, answeredCount, isDiagnosisClear, emergencyWarning, carePlan,
           diagnosisHypothesis, finalDiagnoses, clinicalReasoning,
           reasoningChain, apiStatus, apiStatusText,
           addSymptom, removeSymptom, addQuickSymptom,

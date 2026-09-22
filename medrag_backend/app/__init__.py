@@ -1,1 +1,1 @@
-from .main import app
+"""Clinical application package. Import app.main for the HTTP application."""
