@@ -11,7 +11,7 @@
 html { -webkit-text-size-adjust: 100%; scroll-padding-bottom: 130px; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f4f6f8; color: var(--text); font-size: 16px; line-height: 1.6; }
 button, input, select, textarea { font: inherit; color: inherit; }
-button, summary, label:has(input[type='radio']), label:has(input[type='checkbox']) { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+button, summary, .gender-option, .severity-btn, .option-btn, .yesno-btn { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button, select, summary { cursor: pointer; }
 button:disabled, fieldset:disabled { cursor: default; }
 button:disabled { opacity: .48; }
@@ -67,11 +67,11 @@ input::placeholder, textarea::placeholder { color: #77858e; opacity: 1; }
 .severity-picker, .gender-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; min-width: 0; padding: 3px; border-radius: 6px; background: #edf1f3; }
 .gender-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .severity-btn, .gender-option { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; min-height: 44px; padding: 8px 4px; border: 1px solid transparent; border-radius: 4px; font-size: 16px; cursor: pointer; }
-.severity-btn:has(input:checked), .gender-option:has(input:checked) { background: white; border-color: #a4c6be; color: #076a5d; font-weight: 600; }
-.severity-btn[data-level='3']:has(input:checked) { color: #865700; border-color: #d1b575; }
-.severity-btn[data-level='5']:has(input:checked) { color: #b42318; border-color: #d6a39f; }
+.severity-btn.active, .gender-option.selected { background: white; border-color: #a4c6be; color: #076a5d; font-weight: 600; }
+.severity-btn[data-level='3'].active { color: #865700; border-color: #d1b575; }
+.severity-btn[data-level='5'].active { color: #b42318; border-color: #d6a39f; }
 .severity-btn input, .gender-option input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.severity-btn:has(input:focus-visible), .gender-option:has(input:focus-visible) { outline: 3px solid #3179b7; outline-offset: 1px; }
+.severity-btn:focus-within, .gender-option:focus-within { outline: 3px solid #3179b7; outline-offset: 1px; }
 .btn-add { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; width: 100%; border: 1px dashed #adc3bd; color: var(--primary); background: #f8fcfa; border-radius: 6px; }
 .quick-title { font-size: 15px; color: var(--muted); margin: 20px 0 10px; }
 .quick-symptoms { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
@@ -101,7 +101,7 @@ input::placeholder, textarea::placeholder { color: #77858e; opacity: 1; }
 .answer-options { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .yesno-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .option-btn, .yesno-btn { display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 12px; border: 1px solid #d6dfe4; border-radius: 6px; background: #fff; font-size: 16px; overflow-wrap: anywhere; cursor: pointer; }
-.option-btn:has(input:checked), .yesno-btn:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); color: #075f54; }
+.option-btn.selected, .yesno-btn.selected { border-color: var(--primary); background: var(--primary-soft); color: #075f54; }
 .option-btn input, .yesno-btn input { accent-color: var(--primary); width: 20px; height: 20px; flex: 0 0 auto; }
 .answer-textarea { min-height: 92px; resize: vertical; }
 .final-diagnosis { display: flex; flex-direction: column; gap: 28px; }

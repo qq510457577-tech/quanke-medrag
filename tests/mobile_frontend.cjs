@@ -102,11 +102,13 @@ async function checkLayout(page, width) {
         assert.equal(await page.locator('.action-dock').evaluate(e => getComputedStyle(e).position), 'fixed');
       }
       await page.locator('.gender-option').filter({ hasText: '女' }).click();
+      assert.equal(await page.locator('.gender-option.selected').textContent(), '女');
       await page.getByRole('button', { name: '咳嗽', exact: true }).click();
       assert.equal(await page.locator('.symptom-item').count(), 1);
       assert.equal(await page.getByRole('button', { name: '咳嗽', exact: true }).count(), 0);
       await page.getByLabel('症状1持续年数', { exact: true }).selectOption('10');
       await page.locator('.severity-btn').filter({ hasText: '中度' }).click();
+      assert.ok((await page.locator('.severity-btn.active').textContent()).includes('中度'));
       await page.getByRole('button', { name: '乏力', exact: true }).click();
       await page.getByRole('button', { name: '删除症状2', exact: true }).click();
       assert.equal(await page.getByRole('button', { name: '乏力', exact: true }).count(), 1);

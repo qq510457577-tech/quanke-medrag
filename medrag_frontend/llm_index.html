@@ -82,8 +82,8 @@
               <div class="form-group">
                 <span id="gender-label" class="form-label required">性别</span>
                 <div class="gender-picker" :class="{ error: errors.gender }" role="group" aria-labelledby="gender-label">
-                  <label class="gender-option"><input type="radio" name="gender" value="male" v-model="patientInfo.gender">男</label>
-                  <label class="gender-option"><input type="radio" name="gender" value="female" v-model="patientInfo.gender">女</label>
+                  <label class="gender-option" :class="{ selected: patientInfo.gender === 'male' }"><input type="radio" name="gender" value="male" v-model="patientInfo.gender">男</label>
+                  <label class="gender-option" :class="{ selected: patientInfo.gender === 'female' }"><input type="radio" name="gender" value="female" v-model="patientInfo.gender">女</label>
                 </div>
                 <div v-if="errors.gender" class="error-text">{{ errors.gender }}</div>
               </div>
@@ -137,7 +137,7 @@
                   <div class="meta-group">
                     <span class="meta-label">严重程度</span>
                     <div class="severity-picker">
-                      <label v-for="level in severityLevels" :key="level.value" class="severity-btn" :data-level="level.value">
+                      <label v-for="level in severityLevels" :key="level.value" class="severity-btn" :class="{ active: symptom.severity === level.value }" :data-level="level.value">
                         <input type="radio" :name="'symptom-severity-' + index" :value="level.value" v-model="symptom.severity" :aria-label="'症状' + (index + 1) + '严重程度：' + level.label">
                         {{ level.label }}
                       </label>
@@ -230,20 +230,20 @@
                 
                 <!-- 选择题选项 -->
                 <div v-if="q.input_type === 'yesno'" class="yesno-btns" role="group" :aria-labelledby="'question-' + q.question_id">
-                  <label class="yesno-btn"><input type="radio" :name="q.question_id" value="是" v-model="q.answer">是</label>
-                  <label class="yesno-btn"><input type="radio" :name="q.question_id" value="否" v-model="q.answer">否</label>
+                  <label class="yesno-btn" :class="{ selected: q.answer === '是' }"><input type="radio" :name="q.question_id" value="是" v-model="q.answer">是</label>
+                  <label class="yesno-btn" :class="{ selected: q.answer === '否' }"><input type="radio" :name="q.question_id" value="否" v-model="q.answer">否</label>
                 </div>
                 
                 <div v-else-if="q.input_type === 'single'" class="answer-options" role="group" :aria-labelledby="'question-' + q.question_id">
-                  <label v-for="opt in q.options" :key="opt" class="option-btn"><input type="radio" :name="q.question_id" :value="opt" v-model="q.answer">{{ opt }}</label>
+                  <label v-for="opt in q.options" :key="opt" class="option-btn" :class="{ selected: q.answer === opt }"><input type="radio" :name="q.question_id" :value="opt" v-model="q.answer">{{ opt }}</label>
                 </div>
                 
                 <div v-else-if="q.input_type === 'multiple'" class="answer-options" role="group" :aria-labelledby="'question-' + q.question_id">
-                  <label v-for="opt in q.options" :key="opt" class="option-btn"><input type="checkbox" :value="opt" v-model="q.answers">{{ opt }}</label>
+                  <label v-for="opt in q.options" :key="opt" class="option-btn" :class="{ selected: q.answers && q.answers.includes(opt) }"><input type="checkbox" :value="opt" v-model="q.answers">{{ opt }}</label>
                 </div>
                 
                 <div v-else-if="q.input_type === 'severity'" class="severity-picker" role="group" :aria-labelledby="'question-' + q.question_id" style="margin-top: 8px;">
-                  <label v-for="level in severityLevels" :key="level.value" class="severity-btn" :data-level="level.value"><input type="radio" :name="q.question_id" :value="level.value" v-model="q.answer">{{ level.label }}</label>
+                  <label v-for="level in severityLevels" :key="level.value" class="severity-btn" :class="{ active: q.answer === level.value }" :data-level="level.value"><input type="radio" :name="q.question_id" :value="level.value" v-model="q.answer">{{ level.label }}</label>
                 </div>
                 
                 <div v-else>
